@@ -1,0 +1,22 @@
+{
+  "experiment_name": "wildchat-qwen-vanilla-gaincheck",
+  "method": "autoregressive",
+  "target_model": "Qwen/Qwen3-4B-Instruct-2507",
+  "draft_model": null,
+  "prompt_source": "wildchat_hf",
+  "prompt_path": "data/prompts/sample_prompts.jsonl",
+  "dataset_name": "allenai/WildChat",
+  "dataset_split": "train",
+  "dataset_language": "English",
+  "dataset_streaming": true,
+  "batch_size": 1,
+  "max_new_tokens": 256,
+  "do_sample": false,
+  "temperature": 0.0,
+  "top_p": 1.0,
+  "torch_dtype": "bfloat16",
+  "gpu": "L40S",
+  "seed": 1234,
+  "limit": 32,
+  "notes": "Longer-output WildChat run to check whether draft speculation improves generation throughput."
+}

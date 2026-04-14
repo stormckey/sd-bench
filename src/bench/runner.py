@@ -3,12 +3,27 @@ from __future__ import annotations
 import json
 import re
 import time
+from contextlib import contextmanager
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
 from bench.config import ExperimentConfig
 from bench.metrics import BatchRecord, summarize_records
+
+
+@dataclass(slots=True)
+class SpeculationStats:
+    accepted_draft_tokens: int = 0
+    proposed_draft_tokens: int = 0
+    speculation_steps: int = 0
+
+    @property
+    def acceptance_rate(self) -> float | None:
+        if self.proposed_draft_tokens == 0:
+            return None
+        return self.accepted_draft_tokens / self.proposed_draft_tokens
 
 
 def _slugify(value: str) -> str:
@@ -81,6 +96,44 @@ def _render_prompt_text(prompt_record: dict[str, Any], tokenizer: Any) -> str:
     raise ValueError("Prompt record must contain either 'prompt' or 'messages'")
 
 
+@contextmanager
+def _track_speculation_stats(config: ExperimentConfig):
+    if config.method != "draft_speculative":
+        yield None
+        return
+
+    from transformers.generation.candidate_generator import AssistedCandidateGenerator
+
+    stats = SpeculationStats()
+    original_update = AssistedCandidateGenerator.update_candidate_strategy
+
+    def wrapped_update(self, input_ids: Any, scores: Any, num_matches: int):
+        if hasattr(num_matches, "item"):
+            num_matches = int(num_matches.item())
+        else:
+            num_matches = int(num_matches)
+
+        proposed_draft_tokens = 0
+        if scores is not None:
+            try:
+                proposed_draft_tokens = max(len(scores[0]) - 1, 0)
+            except Exception:
+                proposed_draft_tokens = 0
+
+        if proposed_draft_tokens > 0:
+            stats.proposed_draft_tokens += proposed_draft_tokens
+            stats.accepted_draft_tokens += min(num_matches, proposed_draft_tokens)
+            stats.speculation_steps += 1
+
+        return original_update(self, input_ids, scores, num_matches)
+
+    AssistedCandidateGenerator.update_candidate_strategy = wrapped_update
+    try:
+        yield stats
+    finally:
+        AssistedCandidateGenerator.update_candidate_strategy = original_update
+
+
 def run_generation_batches(
     config: ExperimentConfig,
     prompts: list[dict[str, str]],
@@ -105,9 +158,10 @@ def run_generation_batches(
         if torch.cuda.is_available():
             torch.cuda.reset_peak_memory_stats()
 
-        started = time.perf_counter()
-        outputs = model.generate(**inputs, **generation_kwargs)
-        latency = time.perf_counter() - started
+        with _track_speculation_stats(config) as speculation_stats:
+            started = time.perf_counter()
+            outputs = model.generate(**inputs, **generation_kwargs)
+            latency = time.perf_counter() - started
 
         sequences = outputs.sequences if hasattr(outputs, "sequences") else outputs
 
@@ -136,7 +190,21 @@ def run_generation_batches(
                 total_new_tokens=total_new_tokens,
                 tokens_per_second=tokens_per_second,
                 ttft_seconds=None,
-                acceptance_rate=None,
+                acceptance_rate=(
+                    speculation_stats.acceptance_rate
+                    if speculation_stats is not None
+                    else None
+                ),
+                accepted_draft_tokens=(
+                    speculation_stats.accepted_draft_tokens
+                    if speculation_stats is not None
+                    else None
+                ),
+                proposed_draft_tokens=(
+                    speculation_stats.proposed_draft_tokens
+                    if speculation_stats is not None
+                    else None
+                ),
                 max_memory_allocated_mb=max_allocated_mb,
                 max_memory_reserved_mb=max_reserved_mb,
             )

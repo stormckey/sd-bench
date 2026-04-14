@@ -98,7 +98,6 @@ Results are stored on the mounted Modal results volume under:
 
 ## Next Implementation Steps
 
-- Add acceptance-rate logging for speculative decoding
 - Replace the initial WildChat smoke slice with a curated benchmark shard
 - Add a local script to fetch or inspect result bundles from the Modal volume
 - Implement suffix speculative decoding and tree-based speculative decoding behind the same method interface
