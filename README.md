@@ -79,6 +79,14 @@ modal run modal_app.py --config-path configs/wmt14_qwen8b_draft_fr_en.json --gpu
 modal run modal_app.py --config-path configs/wmt14_qwen8b_prompt_lookup_fr_en.json --gpu L40S
 ```
 
+Run the full default comparison set:
+
+```bash
+modal run modal_app.py --config-path configs/wmt14_qwen8b_vanilla_fr_en.json --gpu L40S
+modal run modal_app.py --config-path configs/wmt14_qwen8b_draft_fr_en.json --gpu L40S
+modal run modal_app.py --config-path configs/wmt14_qwen8b_prompt_lookup_fr_en.json --gpu L40S
+```
+
 ## Additional Examples
 
 Run the WildChat translation slice:
@@ -121,6 +129,80 @@ Current limitation:
 
 - keep `batch_size=1` for draft-model speculative decoding
 
+Observed behavior:
+
+- prompt lookup is currently the clearest win on the retained benchmark sets
+- draft-model speculation is supported, but can be slower than vanilla for the current model pairs and prompts
+
+## How To Run Each Mode
+
+Autoregressive baseline:
+
+```bash
+modal run modal_app.py --config-path configs/wmt14_qwen8b_vanilla_fr_en.json --gpu L40S
+```
+
+Draft-model speculation:
+
+```bash
+modal run modal_app.py --config-path configs/wmt14_qwen8b_draft_fr_en.json --gpu L40S
+```
+
+Prompt lookup:
+
+```bash
+modal run modal_app.py --config-path configs/wmt14_qwen8b_prompt_lookup_fr_en.json --gpu L40S
+```
+
+Override the prompt count for a quick smoke run:
+
+```bash
+modal run modal_app.py --config-path configs/wmt14_qwen8b_vanilla_fr_en.json --gpu L40S --limit 1
+```
+
+## How To Change Experiments
+
+The benchmark entrypoint is always `modal_app.py`, and nearly all experiment changes should be made in a JSON config under `configs/`.
+
+Fields you will usually edit:
+
+- `method`: `autoregressive`, `draft_speculative`, or `prompt_lookup`
+- `target_model`: base model to benchmark
+- `draft_model`: assistant model for `draft_speculative`
+- `prompt_source`: `translation_hf`, `wildchat_hf`, `alpaca_hf`, `xsum_hf`, or `local_jsonl`
+- `dataset_name`, `dataset_config_name`, `dataset_split`: Hugging Face dataset selection
+- `dataset_source_language`, `dataset_target_language`: required for `translation_hf`
+- `dataset_min_user_chars`, `dataset_max_user_chars`, `dataset_max_messages`: prompt filtering
+- `max_new_tokens`: decode length cap
+- `limit`: number of prompts to run
+- `prompt_lookup_num_tokens`: lookup window size for `prompt_lookup`
+- `torch_dtype`: `float16`, `bfloat16`, or `float32`
+- `gpu`: intended Modal GPU type recorded in the config metadata
+- `enable_thinking`: disable this for cleaner latency comparisons on Qwen runs
+
+Rules worth keeping in mind:
+
+- `draft_speculative` requires `draft_model`
+- `translation_hf` requires both `dataset_source_language` and `dataset_target_language`
+- keep `batch_size=1` for draft-model speculative decoding
+- use `separate_assistant_gpu=true` only when you intentionally want the draft model on a second GPU
+
+## Recommended Workflows
+
+To compare decoding methods fairly:
+
+- keep the same prompt slice, `limit`, `max_new_tokens`, and `torch_dtype`
+- run vanilla first, then draft or prompt lookup with the matching dataset config
+- compare methods using the `summary.json` files written under the same benchmark family
+
+For the current project target, the cleanest comparison is:
+
+```bash
+modal run modal_app.py --config-path configs/wmt14_qwen8b_vanilla_fr_en.json --gpu L40S
+modal run modal_app.py --config-path configs/wmt14_qwen8b_draft_fr_en.json --gpu L40S
+modal run modal_app.py --config-path configs/wmt14_qwen8b_prompt_lookup_fr_en.json --gpu L40S
+```
+
 ## Result Format
 
 Each run writes:
@@ -131,6 +213,21 @@ Each run writes:
 Results are stored on the mounted Modal results volume under:
 
 `/results/{experiment_name}/{method}/{timestamp}`
+
+The CLI prints a JSON object with the resolved config, summary metrics, and the result directory.
+
+Metrics to watch:
+
+- `overall_tokens_per_second`: primary throughput metric from `summary.json`
+- `total_latency_seconds`: end-to-end generation time across all batches
+- `total_generated_tokens`: total generated tokens
+- `acceptance_rate`: only meaningful for `draft_speculative`; higher is usually better, but it does not guarantee a speedup
+
+To inspect a stored result locally through Modal:
+
+```bash
+modal volume get llm-bench-results /results/<experiment>/<method>/<timestamp>/summary.json
+```
 
 ## Next Implementation Steps
 
