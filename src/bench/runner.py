@@ -68,8 +68,8 @@ def _build_generation_kwargs(
         if draft_model is None:
             raise ValueError("draft_speculative requires a loaded draft model")
         kwargs["assistant_model"] = draft_model
-        kwargs["tokenizer"] = tokenizer
         if assistant_tokenizer is not None:
+            kwargs["tokenizer"] = tokenizer
             kwargs["assistant_tokenizer"] = assistant_tokenizer
     elif config.method == "prompt_lookup":
         kwargs["prompt_lookup_num_tokens"] = config.prompt_lookup_num_tokens or 5

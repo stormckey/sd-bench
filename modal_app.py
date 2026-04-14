@@ -137,13 +137,13 @@ class BenchmarkWorker:
         if config.method == "draft_speculative":
             if not config.draft_model:
                 raise ValueError("draft_model must be set for draft_speculative runs")
-            self.assistant_tokenizer = AutoTokenizer.from_pretrained(
+            assistant_tokenizer = AutoTokenizer.from_pretrained(
                 config.draft_model,
                 cache_dir=HF_CACHE_DIR,
                 token=token,
             )
-            if self.assistant_tokenizer.pad_token is None:
-                self.assistant_tokenizer.pad_token = self.assistant_tokenizer.eos_token
+            if assistant_tokenizer.pad_token is None:
+                assistant_tokenizer.pad_token = assistant_tokenizer.eos_token
             self.draft_model = AutoModelForCausalLM.from_pretrained(
                 config.draft_model,
                 cache_dir=HF_CACHE_DIR,
@@ -156,9 +156,24 @@ class BenchmarkWorker:
                 ),
             )
             self.draft_model.eval()
+            if not self._tokenizers_match(self.tokenizer, assistant_tokenizer):
+                self.assistant_tokenizer = assistant_tokenizer
 
         self.loaded_key = load_key
         return time.perf_counter() - started
+
+    def _tokenizers_match(self, main_tokenizer: Any, assistant_tokenizer: Any) -> bool:
+        if type(main_tokenizer) is not type(assistant_tokenizer):
+            return False
+        if getattr(main_tokenizer, "vocab_size", None) != getattr(assistant_tokenizer, "vocab_size", None):
+            return False
+        if getattr(main_tokenizer, "bos_token_id", None) != getattr(assistant_tokenizer, "bos_token_id", None):
+            return False
+        if getattr(main_tokenizer, "eos_token_id", None) != getattr(assistant_tokenizer, "eos_token_id", None):
+            return False
+        if getattr(main_tokenizer, "pad_token_id", None) != getattr(assistant_tokenizer, "pad_token_id", None):
+            return False
+        return main_tokenizer.get_vocab() == assistant_tokenizer.get_vocab()
 
     @modal.method()
     def run_experiment(
