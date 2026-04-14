@@ -1,0 +1,37 @@
+
+This is a note on possible project ideas for the MLSys course. Note that these are suggestions, and you are more than welcome to come up with your own ideas as long as it is related to the machine learning system.
+Optimizing LLMs compilation
+Most of the low-level deep learning libraries such as cuDNN focus on optimizing image classification workloads. It is interesting to ask if we could automate the building of a set of kernels for NLP models such as transformers. This project encourages teams to explore this direction, run experiments devices and apply techniques such as low bit quantization, pruning and other optimizations to enable fast execution of NLP models.
+Optimizing LLM serving
+LLMs are extremely slow and expensive to serve. A promising technique to reduce the inference of LLMs is speculative decoding, which leverages a draft model to speculatively decoding tokens and uses the target LLM for verification. There are a variety of approaches to speculative tokens, with different accuracy and runtime overhead. This project encourages teams to explore different techniques to optimize speculative decoding.
+Compressing KV Cache for LLM serving
+Key-value cache is a main bottleneck in LLM serving. This project explores different techniques to reduce the KV cache size by (1) quantizing key/value states and saving them in quantized formats, (2) sparsifying attention calculation and only storing a subset of most significant key/value states, and/or other compression techniques.
+Deep learning on Tiny Devices
+Today most deep learning systems run on a full-fledged OS, and enjoy features such as dynamic memory allocation. There is also an increasing need to run AI applications on IoT devices, many of which, such as RISC-V class processors, have very limited resources like a few megabytes of RAM. It is interesting to ask if we can run machine learning on these resource-limited devices. The team is encouraged to use tools such as uTVM and tensorflow micro to build models and run them on simulators (e.g. spike simulator in RISC-V) or real embedded devices. 
+Transformer Alternatives
+Transformers have been widely used as the backbone of most of today’s language models. This project encourages teams to explore Transformer alternatives, including (1) simplified versions of Transformers, and (2) various techniques to approximate Transformer’s attention computation.
+
+Performance energy profiling of deep learning frameworks
+Performance / energy profiling: profile an existing deep learning framework, and find performance bottleneck in training / testing cases. Or profile the energy consumption of each operation on a mobile device, compare which operation consumes most energy, and think about how to reduce the energy consumption.
+
+Effective learned cost model of low-level program
+Cost model is an important way to predict the runtime of the low-level kernels. This project explores different ways to modeling the cost of the target program. You are welcomed to take performance logs from AutoTVM or other program generators, build models that analyze the cost and evaluate the models. Some example aspects to consider: 
+-	Transferability -- how can we use the same model across different workload
+-	Invariance -- how to build cost model that are invariant to trivial changes (e.g. loop of length 1)
+-	Performance -- how accurate the cost model is
+-	Explanation -- can we interpret the learnt models, what do they reveal about our target program and hardware
+You are encouraged to use techniques such as effective feature extraction, graph neural networks and recursive modeling.
+
+Learned cost model of heterogeneous parallel programs
+Cost model is an important way to predict the runtime of the end to end model execution. This project aims to study an effective cost model for an end to end computation graph, such as transformer or resnet. You can explore the directions of:
+-	Different parallelization strategy
+-	Different device execution strategies (mix of CPU and GPU)
+Exploring the communication/computation tradeoffs of federated learning in the real world
+Federated learning is training statistical models across a network of edge devices or isolated organizations. Key challenges in federated settings include data and systems heterogeneity, expensive communication, and privacy concerns. To hide communication, one typical technique is to perform and apply updates locally for some iterations before each device communicates the updates back to the server. Different from traditional distributed SGD or the one-shot approach, this allows for a flexitble tradeoff between communication and computation. Recently, there is a burst of federated optimization algorithms, claiming varying optimality of these tradeoffs. However, these algorithms are largely grounded on their theoretical behavior, and only have been evaluated in terms of statistical efficiency. The team is encouraged to explore the tradeoff space of various recent federated learning algorithms in the real world (e.g., on real devices). 
+Graph partitioning for computation graph optimization
+Computation graph optimization is one of the most crucial optimizations for machine learning workloads. It includes graph substitution, device placement, and operator fusion. The main bottleneck of these graph optimization techniques is the combinatorial explosion of search space. Graph partitioning has a great potential to solve this problem in a sense that it exponentially reduces search space by localizing graph optimization into each partition. However, graph partitioning for graph optimization is often non-trivial and it would vary depending on graph optimization techniques (e.g., graph substitution) because each of them has a different search space. In this project, the teams are encouraged to pick one of graph optimization techniques and explore (or design) graph partitioning algorithms to allow more effective search or learning for graph optimization.
+Model Compression
+Machine learning model compression techniques are methods used to reduce the size of a trained model, making it more efficient for deployment in resource-constrained environments (e.g., mobile devices or embedded systems) while maintaining its performance as much as possible. Methods include pruning, quantization, low-rank factorization, and knowledge distillation. A good project topic can be exploring more into depth in one of the compression methods, or studying the trade-off between different compression methods.
+
+
+

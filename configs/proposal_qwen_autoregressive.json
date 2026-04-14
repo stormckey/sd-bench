@@ -1,0 +1,18 @@
+{
+  "experiment_name": "proposal-qwen-autoregressive",
+  "method": "autoregressive",
+  "target_model": "Qwen/Qwen3-4B-Instruct-2507",
+  "draft_model": null,
+  "prompt_path": "data/prompts/sample_prompts.jsonl",
+  "batch_size": 1,
+  "max_new_tokens": 64,
+  "do_sample": false,
+  "temperature": 0.0,
+  "top_p": 1.0,
+  "torch_dtype": "bfloat16",
+  "gpu": "L40S",
+  "seed": 1234,
+  "limit": 4,
+  "notes": "Baseline config aligned with the proposal target model."
+}
+

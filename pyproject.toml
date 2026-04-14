@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "llm-serving-bench"
+version = "0.1.0"
+description = "Modal-based benchmark harness for LLM serving experiments"
+requires-python = ">=3.11"
+dependencies = [
+  "modal>=1.4.0",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+

@@ -1,0 +1,5 @@
+{"id": "prompt-1", "prompt": "Explain speculative decoding in two sentences."}
+{"id": "prompt-2", "prompt": "List three reasons LLM serving is expensive."}
+{"id": "prompt-3", "prompt": "Write a short paragraph about GPU memory bottlenecks in inference."}
+{"id": "prompt-4", "prompt": "Compare autoregressive decoding and draft-model speculative decoding."}
+
