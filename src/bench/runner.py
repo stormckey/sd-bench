@@ -50,6 +50,7 @@ def _build_generation_kwargs(
     config: ExperimentConfig,
     tokenizer: Any,
     draft_model: Any,
+    assistant_tokenizer: Any,
 ) -> dict[str, Any]:
     kwargs: dict[str, Any] = {
         "max_new_tokens": config.max_new_tokens,
@@ -67,13 +68,18 @@ def _build_generation_kwargs(
         if draft_model is None:
             raise ValueError("draft_speculative requires a loaded draft model")
         kwargs["assistant_model"] = draft_model
+        kwargs["tokenizer"] = tokenizer
+        if assistant_tokenizer is not None:
+            kwargs["assistant_tokenizer"] = assistant_tokenizer
     elif config.method in {"suffix_speculative", "tree_speculative"}:
         raise NotImplementedError(f"{config.method} is not implemented yet")
 
     return kwargs
-
-
-def _render_prompt_text(prompt_record: dict[str, Any], tokenizer: Any) -> str:
+def _render_prompt_text(
+    prompt_record: dict[str, Any],
+    tokenizer: Any,
+    config: ExperimentConfig,
+) -> str:
     prompt = prompt_record.get("prompt")
     if isinstance(prompt, str):
         return prompt
@@ -81,11 +87,13 @@ def _render_prompt_text(prompt_record: dict[str, Any], tokenizer: Any) -> str:
     messages = prompt_record.get("messages")
     if isinstance(messages, list):
         if hasattr(tokenizer, "apply_chat_template"):
-            return tokenizer.apply_chat_template(
-                messages,
-                tokenize=False,
-                add_generation_prompt=True,
-            )
+            kwargs: dict[str, Any] = {
+                "tokenize": False,
+                "add_generation_prompt": True,
+            }
+            if config.enable_thinking is not None:
+                kwargs["enable_thinking"] = config.enable_thinking
+            return tokenizer.apply_chat_template(messages, **kwargs)
         rendered: list[str] = []
         for item in messages:
             role = item["role"].capitalize()
@@ -140,15 +148,21 @@ def run_generation_batches(
     model: Any,
     tokenizer: Any,
     draft_model: Any = None,
+    assistant_tokenizer: Any = None,
 ) -> tuple[list[BatchRecord], dict[str, Any]]:
     import torch
 
-    generation_kwargs = _build_generation_kwargs(config, tokenizer, draft_model)
+    generation_kwargs = _build_generation_kwargs(
+        config,
+        tokenizer,
+        draft_model,
+        assistant_tokenizer,
+    )
     records: list[BatchRecord] = []
 
     for batch_index, offset in enumerate(range(0, len(prompts), config.batch_size)):
         batch = prompts[offset : offset + config.batch_size]
-        texts = [_render_prompt_text(item, tokenizer) for item in batch]
+        texts = [_render_prompt_text(item, tokenizer, config) for item in batch]
         prompt_ids = [item["id"] for item in batch]
 
         inputs = tokenizer(texts, return_tensors="pt", padding=True)

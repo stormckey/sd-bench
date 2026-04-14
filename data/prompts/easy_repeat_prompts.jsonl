@@ -1,0 +1,12 @@
+{"id": "repeat-1", "messages": [{"role": "user", "content": "Output the word hello exactly 160 times separated by a single space. Do not add any other text. /no_think"}]}
+{"id": "repeat-2", "messages": [{"role": "user", "content": "Output the word cat exactly 160 times separated by a single space. Do not add any other text. /no_think"}]}
+{"id": "repeat-3", "messages": [{"role": "user", "content": "Output the word blue exactly 160 times separated by a single space. Do not add any other text. /no_think"}]}
+{"id": "repeat-4", "messages": [{"role": "user", "content": "Output the number 7 exactly 160 times separated by a single space. Do not add any other text. /no_think"}]}
+{"id": "repeat-5", "messages": [{"role": "user", "content": "Output the token ha exactly 160 times separated by a single space. Do not add any other text. /no_think"}]}
+{"id": "repeat-6", "messages": [{"role": "user", "content": "Output the word yes exactly 160 times separated by a single space. Do not add any other text. /no_think"}]}
+{"id": "repeat-7", "messages": [{"role": "user", "content": "Output the word go exactly 160 times separated by a single space. Do not add any other text. /no_think"}]}
+{"id": "repeat-8", "messages": [{"role": "user", "content": "Output the token OK exactly 160 times separated by a single space. Do not add any other text. /no_think"}]}
+{"id": "repeat-9", "messages": [{"role": "user", "content": "Write red red red repeatedly until you have written red 160 times. Separate each word with one space and add nothing else. /no_think"}]}
+{"id": "repeat-10", "messages": [{"role": "user", "content": "Write no no no repeatedly until you have written no 160 times. Separate each word with one space and add nothing else. /no_think"}]}
+{"id": "repeat-11", "messages": [{"role": "user", "content": "Write up up up repeatedly until you have written up 160 times. Separate each word with one space and add nothing else. /no_think"}]}
+{"id": "repeat-12", "messages": [{"role": "user", "content": "Write on on on repeatedly until you have written on 160 times. Separate each word with one space and add nothing else. /no_think"}]}

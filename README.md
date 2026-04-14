@@ -11,7 +11,7 @@ The repository currently covers target 2 from the project plan:
 - A baseline autoregressive decoding path
 - A working Hugging Face draft-model speculative decoding path
 - Config-driven experiment runs with JSON results
-- WildChat prompt loading from Hugging Face datasets
+- Open-corpus prompt loading from Hugging Face datasets
 
 Suffix speculative decoding and tree-based speculative decoding are not implemented yet.
 
@@ -47,12 +47,12 @@ modal setup
 export HF_TOKEN=...
 ```
 
-## Smoke Test
+## Default Benchmark
 
-Run the baseline benchmark on Modal:
+Run the default baseline benchmark on Modal:
 
 ```bash
-modal run modal_app.py --config-path configs/smoke_gpt2.json --gpu L40S
+modal run modal_app.py --gpu L40S
 ```
 
 The command prints a JSON blob containing:
@@ -61,7 +61,19 @@ The command prints a JSON blob containing:
 - summary metrics
 - the result directory written on the Modal results volume
 
-## WildChat Comparison
+Current default baseline:
+
+- target model: `Qwen/Qwen3-8B`
+- prompt source: `wmt14` French-to-English
+- config: `configs/wmt14_qwen8b_vanilla_fr_en.json`
+
+Recommended real-data speculative comparison:
+
+```bash
+modal run modal_app.py --config-path configs/wmt14_qwen8b_draft_fr_en.json --gpu L40S
+```
+
+## Additional Examples
 
 Run the vanilla baseline on WildChat:
 
@@ -77,9 +89,9 @@ modal run modal_app.py --config-path configs/wildchat_qwen_draft.json --limit 1
 
 Current comparison target:
 
-- target model: `Qwen/Qwen3-4B-Instruct-2507`
-- draft model: `Qwen/Qwen3-1.7B`
-- prompt source: `allenai/WildChat`
+- target model: `Qwen/Qwen3-8B`
+- draft model: `Qwen/Qwen3-0.6B`
+- prompt source: `wmt14` French-to-English
 
 Current limitation:
 

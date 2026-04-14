@@ -1,0 +1,23 @@
+{
+  "experiment_name": "easy-qwen-vanilla-obvious",
+  "method": "autoregressive",
+  "target_model": "Qwen/Qwen3-4B-Instruct-2507",
+  "draft_model": null,
+  "prompt_source": "local_jsonl",
+  "prompt_path": "data/prompts/easy_repeat_prompts.jsonl",
+  "dataset_name": null,
+  "dataset_split": "train",
+  "dataset_language": null,
+  "dataset_streaming": true,
+  "enable_thinking": false,
+  "batch_size": 1,
+  "max_new_tokens": 192,
+  "do_sample": false,
+  "temperature": 0.0,
+  "top_p": 1.0,
+  "torch_dtype": "bfloat16",
+  "gpu": "L40S",
+  "seed": 1234,
+  "limit": 12,
+  "notes": "Deterministic easy prompts intended to maximize draft acceptance."
+}

@@ -15,7 +15,13 @@ if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
 from bench.config import ExperimentConfig, load_config
-from bench.datasets import load_jsonl_prompts, load_wildchat_hf_prompts
+from bench.datasets import (
+    load_alpaca_hf_prompts,
+    load_jsonl_prompts,
+    load_translation_hf_prompts,
+    load_wildchat_hf_prompts,
+    load_xsum_hf_prompts,
+)
 from bench.runner import run_generation_batches, write_result_bundle
 
 APP_NAME = "llm-serving-bench"
@@ -77,6 +83,7 @@ class BenchmarkWorker:
         self.container_started_at = time.perf_counter()
         self.loaded_key: tuple[str, str | None, str] | None = None
         self.tokenizer = None
+        self.assistant_tokenizer = None
         self.model = None
         self.draft_model = None
 
@@ -84,7 +91,13 @@ class BenchmarkWorker:
         import torch
         from transformers import AutoModelForCausalLM, AutoTokenizer
 
-        load_key = (config.target_model, config.draft_model, config.torch_dtype)
+        load_key = (
+            config.target_model,
+            config.draft_model,
+            config.torch_dtype,
+            config.separate_assistant_gpu,
+            torch.cuda.device_count(),
+        )
         if self.loaded_key == load_key:
             return 0.0
 
@@ -111,20 +124,36 @@ class BenchmarkWorker:
             cache_dir=HF_CACHE_DIR,
             token=token,
             dtype=torch_dtype,
-            device_map="auto",
+            device_map=(
+                {"": "cuda:0"}
+                if config.separate_assistant_gpu and torch.cuda.device_count() >= 2
+                else "auto"
+            ),
         )
         self.model.eval()
 
         self.draft_model = None
+        self.assistant_tokenizer = None
         if config.method == "draft_speculative":
             if not config.draft_model:
                 raise ValueError("draft_model must be set for draft_speculative runs")
+            self.assistant_tokenizer = AutoTokenizer.from_pretrained(
+                config.draft_model,
+                cache_dir=HF_CACHE_DIR,
+                token=token,
+            )
+            if self.assistant_tokenizer.pad_token is None:
+                self.assistant_tokenizer.pad_token = self.assistant_tokenizer.eos_token
             self.draft_model = AutoModelForCausalLM.from_pretrained(
                 config.draft_model,
                 cache_dir=HF_CACHE_DIR,
                 token=token,
                 dtype=torch_dtype,
-                device_map="auto",
+                device_map=(
+                    {"": "cuda:1"}
+                    if config.separate_assistant_gpu and torch.cuda.device_count() >= 2
+                    else "auto"
+                ),
             )
             self.draft_model.eval()
 
@@ -149,6 +178,7 @@ class BenchmarkWorker:
             model=self.model,
             tokenizer=self.tokenizer,
             draft_model=self.draft_model,
+            assistant_tokenizer=self.assistant_tokenizer,
         )
 
         summary["model_load_seconds"] = model_load_seconds
@@ -178,13 +208,50 @@ class BenchmarkWorker:
                 limit=config.limit,
                 language=config.dataset_language,
                 streaming=config.dataset_streaming,
+                max_messages=config.dataset_max_messages,
+                min_user_chars=config.dataset_min_user_chars,
+                max_user_chars=config.dataset_max_user_chars,
+                include_keywords=config.dataset_include_keywords,
+                exclude_keywords=config.dataset_exclude_keywords,
+            )
+        if config.prompt_source == "alpaca_hf":
+            return load_alpaca_hf_prompts(
+                dataset_name=config.dataset_name or "yahma/alpaca-cleaned",
+                split=config.dataset_split,
+                limit=config.limit,
+                streaming=config.dataset_streaming,
+                min_user_chars=config.dataset_min_user_chars,
+                max_user_chars=config.dataset_max_user_chars,
+                include_keywords=config.dataset_include_keywords,
+                exclude_keywords=config.dataset_exclude_keywords,
+            )
+        if config.prompt_source == "xsum_hf":
+            return load_xsum_hf_prompts(
+                dataset_name=config.dataset_name or "EdinburghNLP/xsum",
+                split=config.dataset_split,
+                limit=config.limit,
+                streaming=config.dataset_streaming,
+                min_document_chars=config.dataset_min_user_chars,
+                max_document_chars=config.dataset_max_user_chars,
+            )
+        if config.prompt_source == "translation_hf":
+            return load_translation_hf_prompts(
+                dataset_name=config.dataset_name or "wmt14",
+                config_name=config.dataset_config_name or "fr-en",
+                source_language=config.dataset_source_language or "fr",
+                target_language=config.dataset_target_language or "en",
+                split=config.dataset_split,
+                limit=config.limit,
+                streaming=config.dataset_streaming,
+                min_source_chars=config.dataset_min_user_chars,
+                max_source_chars=config.dataset_max_user_chars,
             )
         raise ValueError(f"Unsupported prompt_source: {config.prompt_source}")
 
 
 @app.local_entrypoint()
 def main(
-    config_path: str = "configs/smoke_gpt2.json",
+    config_path: str = "configs/wmt14_qwen8b_vanilla_fr_en.json",
     gpu: str = "L40S",
     limit: int = 0,
 ) -> None:
