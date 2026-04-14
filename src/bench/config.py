@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any
 
@@ -54,6 +54,7 @@ class ExperimentConfig:
     gpu: str = "L40S"
     seed: int = 1234
     limit: int | None = 4
+    method_options: dict[str, Any] = field(default_factory=dict)
     notes: str = ""
 
     def validate(self) -> None:
@@ -61,6 +62,8 @@ class ExperimentConfig:
             raise ValueError(f"Unsupported method: {self.method}")
         if self.prompt_source not in SUPPORTED_PROMPT_SOURCES:
             raise ValueError(f"Unsupported prompt_source: {self.prompt_source}")
+        if not isinstance(self.method_options, dict):
+            raise ValueError("method_options must be a dictionary")
         if self.prompt_source in {"wildchat_hf", "alpaca_hf", "xsum_hf", "translation_hf"} and not self.dataset_name:
             raise ValueError("dataset_name must be set for HF-backed prompt sources")
         if self.prompt_source == "translation_hf":
@@ -74,10 +77,17 @@ class ExperimentConfig:
             raise ValueError("batch_size must be at least 1")
         if self.max_new_tokens < 1:
             raise ValueError("max_new_tokens must be at least 1")
-        if self.prompt_lookup_num_tokens is not None and self.prompt_lookup_num_tokens < 1:
+        prompt_lookup_num_tokens = self.get_method_option(
+            "prompt_lookup_num_tokens",
+            self.prompt_lookup_num_tokens,
+        )
+        if prompt_lookup_num_tokens is not None and prompt_lookup_num_tokens < 1:
             raise ValueError("prompt_lookup_num_tokens must be at least 1")
         if self.torch_dtype not in {"float16", "bfloat16", "float32"}:
             raise ValueError(f"Unsupported torch_dtype: {self.torch_dtype}")
+
+    def get_method_option(self, name: str, default: Any = None) -> Any:
+        return self.method_options.get(name, default)
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)

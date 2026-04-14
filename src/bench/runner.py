@@ -3,27 +3,13 @@ from __future__ import annotations
 import json
 import re
 import time
-from contextlib import contextmanager
-from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
 from bench.config import ExperimentConfig
+from bench.methods import MethodResources, get_benchmark_method
 from bench.metrics import BatchRecord, summarize_records
-
-
-@dataclass(slots=True)
-class SpeculationStats:
-    accepted_draft_tokens: int = 0
-    proposed_draft_tokens: int = 0
-    speculation_steps: int = 0
-
-    @property
-    def acceptance_rate(self) -> float | None:
-        if self.proposed_draft_tokens == 0:
-            return None
-        return self.accepted_draft_tokens / self.proposed_draft_tokens
 
 
 def _slugify(value: str) -> str:
@@ -49,8 +35,7 @@ def _count_generated_tokens(
 def _build_generation_kwargs(
     config: ExperimentConfig,
     tokenizer: Any,
-    draft_model: Any,
-    assistant_tokenizer: Any,
+    method_resources: MethodResources,
 ) -> dict[str, Any]:
     kwargs: dict[str, Any] = {
         "max_new_tokens": config.max_new_tokens,
@@ -64,19 +49,17 @@ def _build_generation_kwargs(
     else:
         kwargs["do_sample"] = False
 
-    if config.method == "draft_speculative":
-        if draft_model is None:
-            raise ValueError("draft_speculative requires a loaded draft model")
-        kwargs["assistant_model"] = draft_model
-        if assistant_tokenizer is not None:
-            kwargs["tokenizer"] = tokenizer
-            kwargs["assistant_tokenizer"] = assistant_tokenizer
-    elif config.method == "prompt_lookup":
-        kwargs["prompt_lookup_num_tokens"] = config.prompt_lookup_num_tokens or 5
-    elif config.method in {"suffix_speculative", "tree_speculative"}:
-        raise NotImplementedError(f"{config.method} is not implemented yet")
-
+    method = get_benchmark_method(config.method)
+    kwargs.update(
+        method.build_generation_kwargs(
+            config,
+            tokenizer=tokenizer,
+            resources=method_resources,
+        )
+    )
     return kwargs
+
+
 def _render_prompt_text(
     prompt_record: dict[str, Any],
     tokenizer: Any,
@@ -105,60 +88,21 @@ def _render_prompt_text(
 
     raise ValueError("Prompt record must contain either 'prompt' or 'messages'")
 
-
-@contextmanager
-def _track_speculation_stats(config: ExperimentConfig):
-    if config.method != "draft_speculative":
-        yield None
-        return
-
-    from transformers.generation.candidate_generator import AssistedCandidateGenerator
-
-    stats = SpeculationStats()
-    original_update = AssistedCandidateGenerator.update_candidate_strategy
-
-    def wrapped_update(self, input_ids: Any, scores: Any, num_matches: int):
-        if hasattr(num_matches, "item"):
-            num_matches = int(num_matches.item())
-        else:
-            num_matches = int(num_matches)
-
-        proposed_draft_tokens = 0
-        if scores is not None:
-            try:
-                proposed_draft_tokens = max(len(scores[0]) - 1, 0)
-            except Exception:
-                proposed_draft_tokens = 0
-
-        if proposed_draft_tokens > 0:
-            stats.proposed_draft_tokens += proposed_draft_tokens
-            stats.accepted_draft_tokens += min(num_matches, proposed_draft_tokens)
-            stats.speculation_steps += 1
-
-        return original_update(self, input_ids, scores, num_matches)
-
-    AssistedCandidateGenerator.update_candidate_strategy = wrapped_update
-    try:
-        yield stats
-    finally:
-        AssistedCandidateGenerator.update_candidate_strategy = original_update
-
-
 def run_generation_batches(
     config: ExperimentConfig,
     prompts: list[dict[str, str]],
     model: Any,
     tokenizer: Any,
-    draft_model: Any = None,
-    assistant_tokenizer: Any = None,
+    method_resources: MethodResources | None = None,
 ) -> tuple[list[BatchRecord], dict[str, Any]]:
     import torch
 
+    method = get_benchmark_method(config.method)
+    method_resources = method_resources or MethodResources()
     generation_kwargs = _build_generation_kwargs(
         config,
         tokenizer,
-        draft_model,
-        assistant_tokenizer,
+        method_resources,
     )
     records: list[BatchRecord] = []
 
@@ -174,7 +118,10 @@ def run_generation_batches(
         if torch.cuda.is_available():
             torch.cuda.reset_peak_memory_stats()
 
-        with _track_speculation_stats(config) as speculation_stats:
+        with method.generation_context(
+            config,
+            resources=method_resources,
+        ) as tracker:
             started = time.perf_counter()
             outputs = model.generate(**inputs, **generation_kwargs)
             latency = time.perf_counter() - started
@@ -196,6 +143,7 @@ def run_generation_batches(
             max_allocated_mb = torch.cuda.max_memory_allocated() / (1024 * 1024)
             max_reserved_mb = torch.cuda.max_memory_reserved() / (1024 * 1024)
 
+        method_metrics = method.build_batch_metrics(tracker)
         tokens_per_second = total_new_tokens / latency if latency > 0 else 0.0
         records.append(
             BatchRecord(
@@ -206,27 +154,18 @@ def run_generation_batches(
                 total_new_tokens=total_new_tokens,
                 tokens_per_second=tokens_per_second,
                 ttft_seconds=None,
-                acceptance_rate=(
-                    speculation_stats.acceptance_rate
-                    if speculation_stats is not None
-                    else None
-                ),
-                accepted_draft_tokens=(
-                    speculation_stats.accepted_draft_tokens
-                    if speculation_stats is not None
-                    else None
-                ),
-                proposed_draft_tokens=(
-                    speculation_stats.proposed_draft_tokens
-                    if speculation_stats is not None
-                    else None
-                ),
+                acceptance_rate=method_metrics.get("acceptance_rate"),
+                accepted_draft_tokens=method_metrics.get("accepted_draft_tokens"),
+                proposed_draft_tokens=method_metrics.get("proposed_draft_tokens"),
+                method_metrics=method_metrics or None,
                 max_memory_allocated_mb=max_allocated_mb,
                 max_memory_reserved_mb=max_reserved_mb,
             )
         )
 
-    return records, summarize_records(records)
+    summary = summarize_records(records)
+    summary.update(method.summarize_records(records))
+    return records, summary
 
 
 def write_result_bundle(

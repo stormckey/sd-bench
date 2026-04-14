@@ -17,6 +17,7 @@ class BatchRecord:
     acceptance_rate: float | None
     accepted_draft_tokens: int | None
     proposed_draft_tokens: int | None
+    method_metrics: dict[str, Any] | None
     max_memory_allocated_mb: float | None
     max_memory_reserved_mb: float | None
 
@@ -39,15 +40,6 @@ def summarize_records(records: list[BatchRecord]) -> dict[str, Any]:
         for record in records
         if record.max_memory_reserved_mb is not None
     ]
-    accepted_draft_tokens = sum(
-        record.accepted_draft_tokens or 0
-        for record in records
-    )
-    proposed_draft_tokens = sum(
-        record.proposed_draft_tokens or 0
-        for record in records
-    )
-
     return {
         "num_batches": total_batches,
         "num_prompts": total_prompts,
@@ -63,12 +55,5 @@ def summarize_records(records: list[BatchRecord]) -> dict[str, Any]:
         ),
         "peak_memory_allocated_mb": max(peak_allocated) if peak_allocated else None,
         "peak_memory_reserved_mb": max(peak_reserved) if peak_reserved else None,
-        "accepted_draft_tokens": accepted_draft_tokens if proposed_draft_tokens > 0 else None,
-        "proposed_draft_tokens": proposed_draft_tokens if proposed_draft_tokens > 0 else None,
-        "acceptance_rate": (
-            accepted_draft_tokens / proposed_draft_tokens
-            if proposed_draft_tokens > 0
-            else None
-        ),
         "ttft_supported": False,
     }

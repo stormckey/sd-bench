@@ -22,6 +22,7 @@ from bench.datasets import (
     load_wildchat_hf_prompts,
     load_xsum_hf_prompts,
 )
+from bench.methods import MethodResources, get_benchmark_method
 from bench.runner import run_generation_batches, write_result_bundle
 
 APP_NAME = "llm-serving-bench"
@@ -83,20 +84,22 @@ class BenchmarkWorker:
     @modal.enter()
     def enter(self) -> None:
         self.container_started_at = time.perf_counter()
-        self.loaded_key: tuple[str, str | None, str] | None = None
+        self.loaded_key: tuple[str, str, str | None, str, str, bool, int] | None = None
         self.tokenizer = None
-        self.assistant_tokenizer = None
         self.model = None
-        self.draft_model = None
+        self.method_resources = MethodResources()
 
     def _ensure_models(self, config: ExperimentConfig) -> float:
         import torch
         from transformers import AutoModelForCausalLM, AutoTokenizer
 
+        method = get_benchmark_method(config.method)
         load_key = (
+            config.method,
             config.target_model,
             config.draft_model,
             config.torch_dtype,
+            json.dumps(config.method_options, sort_keys=True),
             config.separate_assistant_gpu,
             torch.cuda.device_count(),
         )
@@ -134,48 +137,19 @@ class BenchmarkWorker:
         )
         self.model.eval()
 
-        self.draft_model = None
-        self.assistant_tokenizer = None
-        if config.method == "draft_speculative":
-            if not config.draft_model:
-                raise ValueError("draft_model must be set for draft_speculative runs")
-            assistant_tokenizer = AutoTokenizer.from_pretrained(
-                config.draft_model,
-                cache_dir=HF_CACHE_DIR,
-                token=token,
-            )
-            if assistant_tokenizer.pad_token is None:
-                assistant_tokenizer.pad_token = assistant_tokenizer.eos_token
-            self.draft_model = AutoModelForCausalLM.from_pretrained(
-                config.draft_model,
-                cache_dir=HF_CACHE_DIR,
-                token=token,
-                dtype=torch_dtype,
-                device_map=(
-                    {"": "cuda:1"}
-                    if config.separate_assistant_gpu and torch.cuda.device_count() >= 2
-                    else "auto"
-                ),
-            )
-            self.draft_model.eval()
-            if not self._tokenizers_match(self.tokenizer, assistant_tokenizer):
-                self.assistant_tokenizer = assistant_tokenizer
+        self.method_resources = method.prepare_resources(
+            config,
+            target_tokenizer=self.tokenizer,
+            torch_dtype=torch_dtype,
+            token=token,
+            hf_cache_dir=HF_CACHE_DIR,
+            auto_model_cls=AutoModelForCausalLM,
+            auto_tokenizer_cls=AutoTokenizer,
+            cuda_device_count=torch.cuda.device_count(),
+        )
 
         self.loaded_key = load_key
         return time.perf_counter() - started
-
-    def _tokenizers_match(self, main_tokenizer: Any, assistant_tokenizer: Any) -> bool:
-        if type(main_tokenizer) is not type(assistant_tokenizer):
-            return False
-        if getattr(main_tokenizer, "vocab_size", None) != getattr(assistant_tokenizer, "vocab_size", None):
-            return False
-        if getattr(main_tokenizer, "bos_token_id", None) != getattr(assistant_tokenizer, "bos_token_id", None):
-            return False
-        if getattr(main_tokenizer, "eos_token_id", None) != getattr(assistant_tokenizer, "eos_token_id", None):
-            return False
-        if getattr(main_tokenizer, "pad_token_id", None) != getattr(assistant_tokenizer, "pad_token_id", None):
-            return False
-        return main_tokenizer.get_vocab() == assistant_tokenizer.get_vocab()
 
     @modal.method()
     def run_experiment(
@@ -194,8 +168,7 @@ class BenchmarkWorker:
             prompts=prompts,
             model=self.model,
             tokenizer=self.tokenizer,
-            draft_model=self.draft_model,
-            assistant_tokenizer=self.assistant_tokenizer,
+            method_resources=self.method_resources,
         )
 
         summary["model_load_seconds"] = model_load_seconds
