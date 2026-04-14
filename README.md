@@ -33,7 +33,12 @@ Suffix speculative decoding and tree-based speculative decoding are not implemen
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -e .
+pip install git+https://github.com/ErwinZhou/transformers.git
 ```
+
+This project uses a custom `transformers` fork for benchmark runs:
+
+- `https://github.com/ErwinZhou/transformers`
 
 2. Authenticate Modal:
 
