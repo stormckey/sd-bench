@@ -67,24 +67,39 @@ Current default baseline:
 - prompt source: `wmt14` French-to-English
 - config: `configs/wmt14_qwen8b_vanilla_fr_en.json`
 
-Recommended real-data speculative comparison:
+Recommended real-data comparisons:
 
 ```bash
 modal run modal_app.py --config-path configs/wmt14_qwen8b_draft_fr_en.json --gpu L40S
+modal run modal_app.py --config-path configs/wmt14_qwen8b_prompt_lookup_fr_en.json --gpu L40S
 ```
 
 ## Additional Examples
 
-Run the vanilla baseline on WildChat:
+Run the WildChat translation slice:
 
 ```bash
-modal run modal_app.py --config-path configs/wildchat_qwen_vanilla.json --limit 1
+modal run modal_app.py --config-path configs/wildchat_qwen8b_vanilla_translate.json --limit 1
 ```
 
-Run draft-model speculative decoding on the same setup:
+Run draft-model speculation on the same slice:
 
 ```bash
-modal run modal_app.py --config-path configs/wildchat_qwen_draft.json --limit 1
+modal run modal_app.py --config-path configs/wildchat_qwen8b_draft_translate.json --limit 1
+```
+
+Run prompt lookup on the same slice:
+
+```bash
+modal run modal_app.py --config-path configs/wildchat_qwen8b_prompt_lookup_translate.json --limit 1
+```
+
+Run the synthetic repetition prompts:
+
+```bash
+modal run modal_app.py --config-path configs/easy_qwen8b_vanilla_obvious_long.json --limit 1
+modal run modal_app.py --config-path configs/easy_qwen8b_draft_obvious_long.json --limit 1
+modal run modal_app.py --config-path configs/easy_qwen8b_prompt_lookup_obvious_long.json --limit 1
 ```
 
 Current comparison target:
@@ -92,6 +107,10 @@ Current comparison target:
 - target model: `Qwen/Qwen3-8B`
 - draft model: `Qwen/Qwen3-0.6B`
 - prompt source: `wmt14` French-to-English
+- supported benchmark sets:
+  - `wmt14` vanilla / draft / prompt lookup
+  - WildChat translation vanilla / draft / prompt lookup
+  - easy repetition vanilla / draft / prompt lookup
 
 Current limitation:
 
@@ -110,6 +129,5 @@ Results are stored on the mounted Modal results volume under:
 
 ## Next Implementation Steps
 
-- Replace the initial WildChat smoke slice with a curated benchmark shard
 - Add a local script to fetch or inspect result bundles from the Modal volume
 - Implement suffix speculative decoding and tree-based speculative decoding behind the same method interface
