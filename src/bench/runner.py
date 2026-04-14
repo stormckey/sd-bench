@@ -58,6 +58,29 @@ def _build_generation_kwargs(
     return kwargs
 
 
+def _render_prompt_text(prompt_record: dict[str, Any], tokenizer: Any) -> str:
+    prompt = prompt_record.get("prompt")
+    if isinstance(prompt, str):
+        return prompt
+
+    messages = prompt_record.get("messages")
+    if isinstance(messages, list):
+        if hasattr(tokenizer, "apply_chat_template"):
+            return tokenizer.apply_chat_template(
+                messages,
+                tokenize=False,
+                add_generation_prompt=True,
+            )
+        rendered: list[str] = []
+        for item in messages:
+            role = item["role"].capitalize()
+            rendered.append(f"{role}: {item['content']}")
+        rendered.append("Assistant:")
+        return "\n".join(rendered)
+
+    raise ValueError("Prompt record must contain either 'prompt' or 'messages'")
+
+
 def run_generation_batches(
     config: ExperimentConfig,
     prompts: list[dict[str, str]],
@@ -72,7 +95,7 @@ def run_generation_batches(
 
     for batch_index, offset in enumerate(range(0, len(prompts), config.batch_size)):
         batch = prompts[offset : offset + config.batch_size]
-        texts = [item["prompt"] for item in batch]
+        texts = [_render_prompt_text(item, tokenizer) for item in batch]
         prompt_ids = [item["id"] for item in batch]
 
         inputs = tokenizer(texts, return_tensors="pt", padding=True)
@@ -158,4 +181,3 @@ def write_result_bundle(
         "config": config.to_dict(),
         "summary": summary,
     }
-

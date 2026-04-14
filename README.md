@@ -9,8 +9,9 @@ The repository currently covers target 2 from the project plan:
 - Modal-based benchmark infrastructure
 - Persistent model cache and result storage on Modal Volumes
 - A baseline autoregressive decoding path
-- A hook for Hugging Face draft-model speculative decoding
+- A working Hugging Face draft-model speculative decoding path
 - Config-driven experiment runs with JSON results
+- WildChat prompt loading from Hugging Face datasets
 
 Suffix speculative decoding and tree-based speculative decoding are not implemented yet.
 
@@ -60,6 +61,30 @@ The command prints a JSON blob containing:
 - summary metrics
 - the result directory written on the Modal results volume
 
+## WildChat Comparison
+
+Run the vanilla baseline on WildChat:
+
+```bash
+modal run modal_app.py --config-path configs/wildchat_qwen_vanilla.json --limit 1
+```
+
+Run draft-model speculative decoding on the same setup:
+
+```bash
+modal run modal_app.py --config-path configs/wildchat_qwen_draft.json --limit 1
+```
+
+Current comparison target:
+
+- target model: `Qwen/Qwen3-4B-Instruct-2507`
+- draft model: `Qwen/Qwen3-1.7B`
+- prompt source: `allenai/WildChat`
+
+Current limitation:
+
+- keep `batch_size=1` for draft-model speculative decoding
+
 ## Result Format
 
 Each run writes:
@@ -73,8 +98,7 @@ Results are stored on the mounted Modal results volume under:
 
 ## Next Implementation Steps
 
-- Add a stable built-in speculative decoding baseline run
-- Replace smoke-test prompts with curated benchmark prompt shards
+- Add acceptance-rate logging for speculative decoding
+- Replace the initial WildChat smoke slice with a curated benchmark shard
 - Add a local script to fetch or inspect result bundles from the Modal volume
 - Implement suffix speculative decoding and tree-based speculative decoding behind the same method interface
-

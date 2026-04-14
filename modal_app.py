@@ -15,7 +15,7 @@ if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
 from bench.config import ExperimentConfig, load_config
-from bench.datasets import load_jsonl_prompts
+from bench.datasets import load_jsonl_prompts, load_wildchat_hf_prompts
 from bench.runner import run_generation_batches, write_result_bundle
 
 APP_NAME = "llm-serving-bench"
@@ -26,6 +26,7 @@ image = (
     modal.Image.debian_slim(python_version="3.11")
     .pip_install(
         "accelerate>=1.10.0",
+        "datasets>=4.4.0",
         "sentencepiece>=0.2.0",
         "torch>=2.8.0",
         "transformers>=4.57.0",
@@ -134,9 +135,11 @@ class BenchmarkWorker:
     def run_experiment(
         self,
         config_dict: dict[str, Any],
-        prompts: list[dict[str, str]],
+        prompts: list[dict[str, Any]] | None,
     ) -> dict[str, Any]:
         config = ExperimentConfig.from_dict(config_dict)
+        if prompts is None:
+            prompts = self._load_prompts(config)
         model_load_seconds = self._ensure_models(config)
         run_started = time.perf_counter()
 
@@ -162,6 +165,22 @@ class BenchmarkWorker:
         results_volume.commit()
         return result
 
+    def _load_prompts(self, config: ExperimentConfig) -> list[dict[str, Any]]:
+        if config.prompt_source == "local_jsonl":
+            return load_jsonl_prompts(
+                _resolve_prompt_path(config.prompt_path),
+                limit=config.limit,
+            )
+        if config.prompt_source == "wildchat_hf":
+            return load_wildchat_hf_prompts(
+                dataset_name=config.dataset_name or "allenai/WildChat",
+                split=config.dataset_split,
+                limit=config.limit,
+                language=config.dataset_language,
+                streaming=config.dataset_streaming,
+            )
+        raise ValueError(f"Unsupported prompt_source: {config.prompt_source}")
+
 
 @app.local_entrypoint()
 def main(
@@ -175,10 +194,14 @@ def main(
         config.limit = limit
     config.gpu = gpu
 
-    prompts = load_jsonl_prompts(
-        _resolve_prompt_path(config.prompt_path),
-        limit=config.limit,
-    )
+    prompts: list[dict[str, Any]] | None
+    if config.prompt_source == "local_jsonl":
+        prompts = load_jsonl_prompts(
+            _resolve_prompt_path(config.prompt_path),
+            limit=config.limit,
+        )
+    else:
+        prompts = None
 
     worker_cls = BenchmarkWorker.with_options(gpu=gpu)
 
