@@ -8,6 +8,7 @@ from typing import Any
 SUPPORTED_METHODS = {
     "autoregressive",
     "draft_speculative",
+    "prompt_lookup",
     "suffix_speculative",
     "tree_speculative",
 }
@@ -45,6 +46,7 @@ class ExperimentConfig:
     separate_assistant_gpu: bool = False
     batch_size: int = 1
     max_new_tokens: int = 64
+    prompt_lookup_num_tokens: int | None = None
     do_sample: bool = False
     temperature: float = 0.0
     top_p: float = 1.0
@@ -72,6 +74,8 @@ class ExperimentConfig:
             raise ValueError("batch_size must be at least 1")
         if self.max_new_tokens < 1:
             raise ValueError("max_new_tokens must be at least 1")
+        if self.prompt_lookup_num_tokens is not None and self.prompt_lookup_num_tokens < 1:
+            raise ValueError("prompt_lookup_num_tokens must be at least 1")
         if self.torch_dtype not in {"float16", "bfloat16", "float32"}:
             raise ValueError(f"Unsupported torch_dtype: {self.torch_dtype}")
 

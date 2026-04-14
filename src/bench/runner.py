@@ -71,6 +71,8 @@ def _build_generation_kwargs(
         kwargs["tokenizer"] = tokenizer
         if assistant_tokenizer is not None:
             kwargs["assistant_tokenizer"] = assistant_tokenizer
+    elif config.method == "prompt_lookup":
+        kwargs["prompt_lookup_num_tokens"] = config.prompt_lookup_num_tokens or 5
     elif config.method in {"suffix_speculative", "tree_speculative"}:
         raise NotImplementedError(f"{config.method} is not implemented yet")
 
