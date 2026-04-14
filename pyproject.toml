@@ -11,6 +11,8 @@ dependencies = [
   "modal>=1.4.0",
 ]
 
+[project.scripts]
+bench = "bench.cli:main"
+
 [tool.setuptools.packages.find]
 where = ["src"]
-

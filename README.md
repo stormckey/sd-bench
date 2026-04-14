@@ -79,6 +79,14 @@ modal run modal_app.py --config-path configs/wmt14_qwen8b_draft_fr_en.json --gpu
 modal run modal_app.py --config-path configs/wmt14_qwen8b_prompt_lookup_fr_en.json --gpu L40S
 ```
 
+Quick comparison runner:
+
+```bash
+./scripts/bench compare wmt14
+./scripts/bench compare wildchat --limit 1
+./scripts/bench compare --list
+```
+
 Run the full default comparison set:
 
 ```bash
@@ -158,6 +166,12 @@ Override the prompt count for a quick smoke run:
 
 ```bash
 modal run modal_app.py --config-path configs/wmt14_qwen8b_vanilla_fr_en.json --gpu L40S --limit 1
+```
+
+Run a built-in suite with one command:
+
+```bash
+./scripts/bench compare default
 ```
 
 ## How To Change Experiments
