@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import shutil
 import subprocess
 import sys
@@ -45,6 +46,12 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="List the built-in benchmark suites.",
     )
+    compare_parser.add_argument(
+        "--verbose",
+        "-v",
+        action="store_true",
+        help="Print full subprocess output (progress bars, logs, etc.).",
+    )
 
     return parser
 
@@ -81,6 +88,142 @@ def _format_command(command: list[str]) -> str:
     return " ".join(command)
 
 
+def _extract_json_result(output: str) -> dict | None:
+    """Extract the last JSON object from subprocess output."""
+    # Find JSON blocks in the output (the result is printed as a JSON object)
+    brace_depth = 0
+    json_start = None
+    last_json = None
+
+    for i, ch in enumerate(output):
+        if ch == "{":
+            if brace_depth == 0:
+                json_start = i
+            brace_depth += 1
+        elif ch == "}":
+            brace_depth -= 1
+            if brace_depth == 0 and json_start is not None:
+                candidate = output[json_start : i + 1]
+                try:
+                    last_json = json.loads(candidate)
+                except json.JSONDecodeError:
+                    pass
+                json_start = None
+
+    return last_json
+
+
+def _short_method(method: str) -> str:
+    """Return a compact display name for a method."""
+    return {
+        "autoregressive": "vanilla",
+        "draft_speculative": "draft-spec",
+        "prompt_lookup": "prompt-lookup",
+    }.get(method, method)
+
+
+_SPINNER_FRAMES = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]
+
+
+def _print_table(results: list[dict], config_paths: list[Path]) -> None:
+    """Print a clean comparison table from collected results."""
+    if not results:
+        return
+
+    # Sort results to match the original config order
+    # Config stems use underscores, experiment names use hyphens — normalize both
+    config_order = {p.stem.replace("_", "-"): i for i, p in enumerate(config_paths)}
+    results.sort(
+        key=lambda r: config_order.get(
+            r.get("config", {}).get("experiment_name", ""), 999
+        )
+    )
+
+    # ── Header info ──
+    first_cfg = results[0].get("config", {})
+    model = first_cfg.get("target_model", "?")
+    dataset = first_cfg.get("dataset_name", "?")
+    limit = first_cfg.get("limit", "?")
+    gpu = first_cfg.get("gpu", "?")
+    print()
+    print(f"  Model: {model}   Dataset: {dataset}   GPU: {gpu}   Prompts: {limit}")
+    print()
+
+    # ── Rows ──
+    # Columns: Method | Tokens | Tok/s | Latency | Mem (MB) | Draft Acc | Wall (s)
+    headers = ["Method", "Tokens", "Tok/s", "Latency", "Peak Mem", "Draft Acc", "Wall"]
+    rows: list[list[str]] = []
+    for r in results:
+        cfg = r.get("config", {})
+        s = r.get("summary", {})
+        method = _short_method(cfg.get("method", "?"))
+        draft = cfg.get("draft_model")
+        if draft:
+            method += f" ({draft.split('/')[-1]})"
+
+        tokens = s.get("total_generated_tokens", "-")
+        tps = s.get("overall_tokens_per_second")
+        latency = s.get("total_latency_seconds")
+        mem = s.get("peak_memory_allocated_mb")
+        acc = s.get("acceptance_rate")
+        wall = r.get("client_wall_seconds")
+
+        rows.append([
+            method,
+            str(tokens) if tokens != "-" else "-",
+            f"{tps:.1f}" if isinstance(tps, (int, float)) else "-",
+            f"{latency:.2f}s" if isinstance(latency, (int, float)) else "-",
+            f"{mem:,.0f} MB" if isinstance(mem, (int, float)) else "-",
+            f"{acc:.1%}" if isinstance(acc, (int, float)) else "-",
+            f"{wall:.1f}s" if isinstance(wall, (int, float)) else "-",
+        ])
+
+    # Calculate column widths
+    col_widths = [len(h) for h in headers]
+    for row in rows:
+        for i, cell in enumerate(row):
+            col_widths[i] = max(col_widths[i], len(cell))
+
+    # Print
+    header_line = "  ".join(h.ljust(col_widths[i]) for i, h in enumerate(headers))
+    sep_line = "  ".join("─" * col_widths[i] for i in range(len(headers)))
+    print(f"  {header_line}")
+    print(f"  {sep_line}")
+    for row in rows:
+        line = "  ".join(cell.ljust(col_widths[i]) for i, cell in enumerate(row))
+        print(f"  {line}")
+
+    # ── Speedup vs baseline (vanilla / autoregressive) ──
+    baseline_tps = None
+    for r in results:
+        cfg = r.get("config", {})
+        if cfg.get("method") == "autoregressive":
+            baseline_tps = r.get("summary", {}).get("overall_tokens_per_second")
+            break
+    # Fallback: use first result as baseline
+    if baseline_tps is None:
+        baseline_tps = results[0].get("summary", {}).get("overall_tokens_per_second")
+
+    if isinstance(baseline_tps, (int, float)) and baseline_tps > 0 and len(results) > 1:
+        print()
+        print("  Speedup vs vanilla:")
+        for r in results:
+            cfg = r.get("config", {})
+            if cfg.get("method") == "autoregressive":
+                continue
+            s = r.get("summary", {})
+            method = _short_method(cfg.get("method", "?"))
+            draft = cfg.get("draft_model")
+            if draft:
+                method += f" ({draft.split('/')[-1]})"
+            tps = s.get("overall_tokens_per_second")
+            if isinstance(tps, (int, float)):
+                speedup = tps / baseline_tps
+                print(f"    {method}: {speedup:.2f}x")
+
+    print()
+
+
 def run_compare(args: argparse.Namespace) -> int:
     if args.list:
         for name, configs in sorted(list_builtin_suites().items()):
@@ -90,6 +233,7 @@ def run_compare(args: argparse.Namespace) -> int:
         return 0
 
     config_paths = resolve_targets(args.targets)
+    verbose = getattr(args, "verbose", False)
 
     commands: list[list[str]] = []
     for config_path in config_paths:
@@ -106,16 +250,18 @@ def run_compare(args: argparse.Namespace) -> int:
             command.extend(["--limit", str(args.limit)])
         commands.append(command)
 
-    for index, command in enumerate(commands, start=1):
-        print(f"[{index}/{len(commands)}] {_format_command(command)}")
-        if args.dry_run:
-            continue
-
     if args.dry_run:
+        for index, command in enumerate(commands, start=1):
+            print(f"[{index}/{len(commands)}] {_format_command(command)}")
         return 0
 
+    total = len(commands)
+    print(f"Launching {total} benchmark{'s' if total > 1 else ''}...")
+    print()
+
     running: list[dict[str, object]] = []
-    failures: list[tuple[int, list[str], int]] = []
+    failures: list[tuple[int, list[str], int, str]] = []
+    collected_results: list[dict] = []
 
     for index, command in enumerate(commands, start=1):
         log_file = tempfile.TemporaryFile(mode="w+t", encoding="utf-8")
@@ -126,16 +272,27 @@ def run_compare(args: argparse.Namespace) -> int:
             stderr=subprocess.STDOUT,
             text=True,
         )
-        print(f"started [{index}/{len(commands)}] {_format_command(command)}")
+        # Read config to show a nice name
+        config_path = config_paths[index - 1]
+        try:
+            cfg = json.loads(config_path.read_text())
+            label = cfg.get("experiment_name", config_path.stem)
+        except Exception:
+            label = config_path.stem
+
+        print(f"  [{index}/{total}] ⏳ {label}")
         running.append(
             {
                 "index": index,
                 "command": command,
                 "process": process,
                 "log_file": log_file,
+                "label": label,
             }
         )
 
+    print()
+    spinner_idx = 0
     pending = running[:]
     while pending:
         still_pending: list[dict[str, object]] = []
@@ -152,23 +309,47 @@ def run_compare(args: argparse.Namespace) -> int:
             output = log_file.read().rstrip()
             index = int(item["index"])
             command = item["command"]
+            label = item["label"]
             assert isinstance(command, list)
+            assert isinstance(label, str)
 
-            print(f"finished [{index}/{len(commands)}] {_format_command(command)} (exit {returncode})")
-            if output:
+            if returncode == 0:
+                print(f"  [{index}/{total}] ✅ {label}")
+                result = _extract_json_result(output)
+                if result:
+                    collected_results.append(result)
+                if verbose:
+                    print(output)
+            else:
+                print(f"  [{index}/{total}] ❌ {label} (exit {returncode})")
+                failures.append((index, command, returncode, output))
+                # Always show output on failure
                 print(output)
-            if returncode != 0:
-                failures.append((index, command, returncode))
+
             log_file.close()
 
         pending = still_pending
         if pending:
+            frame = _SPINNER_FRAMES[spinner_idx % len(_SPINNER_FRAMES)]
+            waiting = [str(item["index"]) for item in pending]
+            sys.stdout.write(f"\r  {frame} Waiting for run{'s' if len(pending) > 1 else ''} {', '.join(waiting)}...")
+            sys.stdout.flush()
+            spinner_idx += 1
             time.sleep(0.2)
 
+    # Clear spinner line
+    sys.stdout.write("\r" + " " * 60 + "\r")
+    sys.stdout.flush()
+
+    # ── Summary table ──
+    if collected_results:
+        _print_table(collected_results, config_paths)
+
     if failures:
-        for index, command, returncode in failures:
+        print("Failures:", file=sys.stderr)
+        for index, command, returncode, output in failures:
             print(
-                f"failed [{index}/{len(commands)}] {_format_command(command)} (exit {returncode})",
+                f"  [{index}/{total}] {_format_command(command)} (exit {returncode})",
                 file=sys.stderr,
             )
         return failures[0][2]
