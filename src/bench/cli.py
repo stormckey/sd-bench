@@ -4,6 +4,8 @@ import argparse
 import shutil
 import subprocess
 import sys
+import tempfile
+import time
 from pathlib import Path
 
 from bench.suites import ROOT, list_builtin_suites, resolve_suite
@@ -75,6 +77,10 @@ def modal_executable() -> list[str]:
     return [sys.executable, "-m", "modal"]
 
 
+def _format_command(command: list[str]) -> str:
+    return " ".join(command)
+
+
 def run_compare(args: argparse.Namespace) -> int:
     if args.list:
         for name, configs in sorted(list_builtin_suites().items()):
@@ -101,12 +107,71 @@ def run_compare(args: argparse.Namespace) -> int:
         commands.append(command)
 
     for index, command in enumerate(commands, start=1):
-        print(f"[{index}/{len(commands)}] {' '.join(command)}")
+        print(f"[{index}/{len(commands)}] {_format_command(command)}")
         if args.dry_run:
             continue
-        completed = subprocess.run(command, cwd=ROOT)
-        if completed.returncode != 0:
-            return completed.returncode
+
+    if args.dry_run:
+        return 0
+
+    running: list[dict[str, object]] = []
+    failures: list[tuple[int, list[str], int]] = []
+
+    for index, command in enumerate(commands, start=1):
+        log_file = tempfile.TemporaryFile(mode="w+t", encoding="utf-8")
+        process = subprocess.Popen(
+            command,
+            cwd=ROOT,
+            stdout=log_file,
+            stderr=subprocess.STDOUT,
+            text=True,
+        )
+        print(f"started [{index}/{len(commands)}] {_format_command(command)}")
+        running.append(
+            {
+                "index": index,
+                "command": command,
+                "process": process,
+                "log_file": log_file,
+            }
+        )
+
+    pending = running[:]
+    while pending:
+        still_pending: list[dict[str, object]] = []
+        for item in pending:
+            process = item["process"]
+            assert isinstance(process, subprocess.Popen)
+            returncode = process.poll()
+            if returncode is None:
+                still_pending.append(item)
+                continue
+
+            log_file = item["log_file"]
+            log_file.seek(0)
+            output = log_file.read().rstrip()
+            index = int(item["index"])
+            command = item["command"]
+            assert isinstance(command, list)
+
+            print(f"finished [{index}/{len(commands)}] {_format_command(command)} (exit {returncode})")
+            if output:
+                print(output)
+            if returncode != 0:
+                failures.append((index, command, returncode))
+            log_file.close()
+
+        pending = still_pending
+        if pending:
+            time.sleep(0.2)
+
+    if failures:
+        for index, command, returncode in failures:
+            print(
+                f"failed [{index}/{len(commands)}] {_format_command(command)} (exit {returncode})",
+                file=sys.stderr,
+            )
+        return failures[0][2]
 
     return 0
 

@@ -23,11 +23,6 @@ BUILTIN_SUITES: dict[str, list[str]] = {
         "configs/wildchat_qwen8b_draft_translate.json",
         "configs/wildchat_qwen8b_prompt_lookup_translate.json",
     ],
-    "easy": [
-        "configs/easy_qwen8b_vanilla_obvious_long.json",
-        "configs/easy_qwen8b_draft_obvious_long.json",
-        "configs/easy_qwen8b_prompt_lookup_obvious_long.json",
-    ],
 }
 
 

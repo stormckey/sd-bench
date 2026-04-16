@@ -17,7 +17,7 @@
   "enable_thinking": false,
   "separate_assistant_gpu": false,
   "batch_size": 1,
-  "max_new_tokens": 192,
+  "max_new_tokens": 1024,
   "prompt_lookup_num_tokens": 5,
   "do_sample": false,
   "temperature": 0.0,
@@ -25,6 +25,6 @@
   "torch_dtype": "bfloat16",
   "gpu": "L40S",
   "seed": 1234,
-  "limit": 12,
+  "limit": 50,
   "notes": "Filtered WildChat slice focused on short translation prompts only, using prompt lookup decoding."
 }

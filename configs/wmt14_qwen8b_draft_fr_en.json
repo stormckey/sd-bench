@@ -19,13 +19,13 @@
   "dataset_exclude_keywords": null,
   "enable_thinking": false,
   "batch_size": 1,
-  "max_new_tokens": 128,
+  "max_new_tokens": 1024,
   "do_sample": false,
   "temperature": 0.0,
   "top_p": 1.0,
   "torch_dtype": "bfloat16",
   "gpu": "L40S",
   "seed": 1234,
-  "limit": 12,
+  "limit": 50,
   "notes": "WMT14 French-to-English translation slice."
 }
