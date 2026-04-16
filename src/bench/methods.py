@@ -220,6 +220,24 @@ class PromptLookupMethod(BenchmarkMethod):
 
 
 class SuffixSpeculativeMethod(BenchmarkMethod):
+    def prepare_resources(
+        self,
+        config: ExperimentConfig,
+        *,
+        target_tokenizer: Any,
+        torch_dtype: Any,
+        token: str | None,
+        hf_cache_dir: str,
+        auto_model_cls: Any,
+        auto_tokenizer_cls: Any,
+        cuda_device_count: int,
+    ) -> MethodResources:
+        from transformers.generation.suffix_tree import SuffixDecodingCache
+
+        max_depth = config.get_method_option("suffix_decoding_max_depth", 64)
+        cache = SuffixDecodingCache(max_depth=max_depth, max_cached_requests=-1)
+        return MethodResources(extras={"suffix_decoding_cache": cache})
+
     def build_generation_kwargs(
         self,
         config: ExperimentConfig,
@@ -236,11 +254,15 @@ class SuffixSpeculativeMethod(BenchmarkMethod):
         suffix_decoding_min_prob = config.get_method_option(
             "suffix_decoding_min_prob", 0.1,
         )
-        return {
+        kwargs = {
             "suffix_decoding_num_tokens": suffix_decoding_num_tokens,
             "suffix_decoding_max_depth": suffix_decoding_max_depth,
             "suffix_decoding_min_prob": suffix_decoding_min_prob,
         }
+        cache = resources.extras.get("suffix_decoding_cache")
+        if cache is not None:
+            kwargs["suffix_decoding_cache"] = cache
+        return kwargs
 
     @contextmanager
     def generation_context(
