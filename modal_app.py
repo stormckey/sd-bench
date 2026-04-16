@@ -28,7 +28,7 @@ from bench.runner import run_generation_batches, write_result_bundle
 APP_NAME = "llm-serving-bench"
 HF_CACHE_DIR = "/cache/hf"
 RESULTS_DIR = "/results"
-TRANSFORMERS_GIT_URL = "git+https://github.com/ErwinZhou/transformers.git"
+TRANSFORMERS_LOCAL_DIR = ROOT / "transformers"
 
 image = (
     modal.Image.debian_slim(python_version="3.11")
@@ -38,8 +38,14 @@ image = (
         "datasets>=4.4.0",
         "sentencepiece>=0.2.0",
         "torch>=2.8.0",
-        TRANSFORMERS_GIT_URL,
     )
+    .add_local_dir(
+        str(TRANSFORMERS_LOCAL_DIR),
+        remote_path="/root/transformers",
+        copy=True,
+        ignore=[".git", "tests", "docs", "examples", "docker", "notebooks", "__pycache__"],
+    )
+    .run_commands("pip install /root/transformers")
     .add_local_dir(SRC, remote_path="/root/src")
 )
 
