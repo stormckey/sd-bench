@@ -23,4 +23,19 @@ Use the completed 2026-04-16 `./scripts/bench compare default` run as the main r
 
 ## Secondary result
 
-- A separate WildChat translation run with `limit=50` shows the same qualitative pattern: `prompt_lookup` beats vanilla, while `draft_speculative` underperforms vanilla.
+WildChat translation run on 2026-04-16 with `limit=50`.
+
+- GPU: L40S
+- Workload: WildChat translation slice, 50 prompts
+- Model: `Qwen/Qwen3-8B`
+
+### Ranking
+
+1. `prompt_lookup`: 54.46 tokens/s, 137.05 s total latency
+2. `autoregressive`: 25.77 tokens/s, 272.76 s total latency
+3. `draft_speculative`: 13.92 tokens/s, 454.98 s total latency, 36.47% draft-token acceptance
+
+### Important takeaways
+
+- Prompt lookup is the clear winner on WildChat too, at about 2.11x the throughput of vanilla decoding.
+- Draft-model speculation is worse than vanilla on this run, at about 0.54x vanilla throughput.
