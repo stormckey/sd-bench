@@ -12,16 +12,25 @@ BUILTIN_SUITES: dict[str, list[str]] = {
         "configs/wmt14_qwen8b_vanilla_fr_en.json",
         "configs/wmt14_qwen8b_draft_fr_en.json",
         "configs/wmt14_qwen8b_prompt_lookup_fr_en.json",
+        "configs/wmt14_qwen8b_suffix_fr_en.json",
     ],
     "wmt14": [
         "configs/wmt14_qwen8b_vanilla_fr_en.json",
         "configs/wmt14_qwen8b_draft_fr_en.json",
         "configs/wmt14_qwen8b_prompt_lookup_fr_en.json",
+        "configs/wmt14_qwen8b_suffix_fr_en.json",
     ],
     "wildchat": [
         "configs/wildchat_qwen8b_vanilla_translate.json",
         "configs/wildchat_qwen8b_draft_translate.json",
         "configs/wildchat_qwen8b_prompt_lookup_translate.json",
+        "configs/wildchat_qwen8b_suffix_translate.json",
+    ],
+    "wildchat-code": [
+        "configs/wildchat_qwen8b_vanilla_code.json",
+        "configs/wildchat_qwen8b_draft_code.json",
+        "configs/wildchat_qwen8b_prompt_lookup_code.json",
+        "configs/wildchat_qwen8b_suffix_code.json",
     ],
 }
 
