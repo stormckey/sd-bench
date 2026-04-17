@@ -12,6 +12,17 @@ The benchmark runner executes on Modal GPUs, reads prompts from Hugging Face dat
 
 ## Quick Start
 
+Place the Transformers fork at `./transformers` before running benchmarks. `modal_app.py` mounts that exact repo-root directory into the Modal image and installs it from there.
+
+Current test checkout:
+
+```bash
+git clone https://github.com/ErwinZhou/transformers.git transformers
+cd transformers
+git checkout acc6fa047f42551cbc9ee8a22629b532608fd7fa
+cd ..
+```
+
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
@@ -117,6 +128,7 @@ The main metric to compare is `overall_tokens_per_second`.
 
 ## Notes
 
-- Benchmark workers install a custom `transformers` fork: `git+https://github.com/ErwinZhou/transformers.git`
+- Benchmark workers install the vendored local checkout at `./transformers`, not PyPI.
+- The current test checkout tracks `https://github.com/ErwinZhou/transformers.git` on branch `suffix-feat` at commit `acc6fa047f42551cbc9ee8a22629b532608fd7fa`.
 - Prompt lookup currently shows the clearest speedup on the retained benchmark sets
 - Draft-model speculation is supported, but may be slower than vanilla for some model pairs
