@@ -18,6 +18,8 @@ from bench.config import ExperimentConfig, load_config
 from bench.datasets import (
     load_alpaca_hf_prompts,
     load_jsonl_prompts,
+    load_swebench_hf_prompts,
+    load_terminalbench_hf_prompts,
     load_translation_hf_prompts,
     load_wildchat_hf_prompts,
     load_xsum_hf_prompts,
@@ -241,6 +243,20 @@ class BenchmarkWorker:
                 streaming=config.dataset_streaming,
                 min_source_chars=config.dataset_min_user_chars,
                 max_source_chars=config.dataset_max_user_chars,
+            )
+        if config.prompt_source == "swebench_hf":
+            return load_swebench_hf_prompts(
+                dataset_name=config.dataset_name or "princeton-nlp/SWE-bench",
+                split=config.dataset_split,
+                limit=config.limit,
+                streaming=config.dataset_streaming,
+            )
+        if config.prompt_source == "terminalbench_hf":
+            return load_terminalbench_hf_prompts(
+                dataset_name=config.dataset_name or "ia03/terminal-bench",
+                split=config.dataset_split,
+                limit=config.limit,
+                streaming=config.dataset_streaming,
             )
         raise ValueError(f"Unsupported prompt_source: {config.prompt_source}")
 

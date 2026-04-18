@@ -32,6 +32,18 @@ BUILTIN_SUITES: dict[str, list[str]] = {
         "configs/wildchat_qwen8b_prompt_lookup_code.json",
         "configs/wildchat_qwen8b_suffix_code.json",
     ],
+    "swebench": [
+        "configs/swebench_qwen8b_vanilla.json",
+        "configs/swebench_qwen8b_draft.json",
+        "configs/swebench_qwen8b_prompt_lookup.json",
+        "configs/swebench_qwen8b_suffix.json",
+    ],
+    "terminalbench": [
+        "configs/terminalbench_qwen8b_vanilla.json",
+        "configs/terminalbench_qwen8b_draft.json",
+        "configs/terminalbench_qwen8b_prompt_lookup.json",
+        "configs/terminalbench_qwen8b_suffix.json",
+    ],
 }
 
 

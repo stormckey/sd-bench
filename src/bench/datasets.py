@@ -134,6 +134,60 @@ def load_alpaca_hf_prompts(
     return prompts
 
 
+def load_swebench_hf_prompts(
+    dataset_name: str,
+    split: str = "test",
+    limit: int | None = None,
+    streaming: bool = True,
+) -> list[dict[str, Any]]:
+    from datasets import load_dataset
+
+    prompts: list[dict[str, Any]] = []
+    dataset = load_dataset(dataset_name, split=split, streaming=streaming)
+
+    for row_index, record in enumerate(dataset, start=1):
+        problem = record.get("problem_statement")
+        if not isinstance(problem, str) or not problem.strip():
+            continue
+        prompt_id = record.get("instance_id") or f"swebench-{row_index}"
+        prompts.append({"id": str(prompt_id), "prompt": problem.strip()})
+        if limit is not None and len(prompts) >= limit:
+            break
+
+    if not prompts:
+        raise ValueError(
+            f"No prompts loaded from dataset={dataset_name!r}, split={split!r}"
+        )
+    return prompts
+
+
+def load_terminalbench_hf_prompts(
+    dataset_name: str,
+    split: str = "test",
+    limit: int | None = None,
+    streaming: bool = True,
+) -> list[dict[str, Any]]:
+    from datasets import load_dataset
+
+    prompts: list[dict[str, Any]] = []
+    dataset = load_dataset(dataset_name, split=split, streaming=streaming)
+
+    for row_index, record in enumerate(dataset, start=1):
+        description = record.get("base_description")
+        if not isinstance(description, str) or not description.strip():
+            continue
+        prompt_id = record.get("task_id") or f"terminalbench-{row_index}"
+        prompts.append({"id": str(prompt_id), "prompt": description.strip()})
+        if limit is not None and len(prompts) >= limit:
+            break
+
+    if not prompts:
+        raise ValueError(
+            f"No prompts loaded from dataset={dataset_name!r}, split={split!r}"
+        )
+    return prompts
+
+
 def load_xsum_hf_prompts(
     dataset_name: str,
     split: str = "test",

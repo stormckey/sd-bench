@@ -1,0 +1,21 @@
+{
+  "experiment_name": "terminalbench-qwen8b-draft",
+  "method": "draft_speculative",
+  "target_model": "Qwen/Qwen3-8B",
+  "draft_model": "Qwen/Qwen3-0.6B",
+  "prompt_source": "terminalbench_hf",
+  "dataset_name": "ia03/terminal-bench",
+  "dataset_split": "test",
+  "dataset_streaming": true,
+  "enable_thinking": false,
+  "batch_size": 1,
+  "max_new_tokens": 1024,
+  "do_sample": false,
+  "temperature": 0.0,
+  "top_p": 1.0,
+  "torch_dtype": "bfloat16",
+  "gpu": "L40S",
+  "seed": 1234,
+  "limit": 50,
+  "notes": "TerminalBench test split using draft speculative decoding."
+}
