@@ -7,6 +7,7 @@ Supported methods:
 - `autoregressive`
 - `draft_speculative`
 - `prompt_lookup`
+- `suffix`
 
 The benchmark runner executes on Modal GPUs, reads prompts from Hugging Face datasets or local JSONL, and writes `raw.jsonl` plus `summary.json` for each run.
 
@@ -80,6 +81,8 @@ modal run modal_app.py --config-path configs/wmt14_qwen8b_draft_fr_en.json --gpu
 
 - `default` / `wmt14`: WMT14 French-to-English configs
 - `wildchat`: WildChat translation slice
+- `swebench`: SWE-bench code generation tasks
+- `terminalbench`: TerminalBench command-line tasks
 
 Example configs live in `configs/`.
 
