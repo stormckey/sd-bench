@@ -20,7 +20,7 @@ Current test checkout:
 ```bash
 git clone https://github.com/ErwinZhou/transformers.git transformers
 cd transformers
-git checkout acc6fa047f42551cbc9ee8a22629b532608fd7fa
+git checkout suffix-feat
 cd ..
 ```
 
