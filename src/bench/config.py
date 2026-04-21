@@ -19,6 +19,7 @@ SUPPORTED_PROMPT_SOURCES = {
     "alpaca_hf",
     "xsum_hf",
     "translation_hf",
+    "spider_hf",
     "swebench_hf",
     "terminalbench_hf",
 }
@@ -66,7 +67,7 @@ class ExperimentConfig:
             raise ValueError(f"Unsupported prompt_source: {self.prompt_source}")
         if not isinstance(self.method_options, dict):
             raise ValueError("method_options must be a dictionary")
-        if self.prompt_source in {"wildchat_hf", "alpaca_hf", "xsum_hf", "translation_hf", "swebench_hf", "terminalbench_hf"} and not self.dataset_name:
+        if self.prompt_source in {"wildchat_hf", "alpaca_hf", "xsum_hf", "translation_hf", "spider_hf", "swebench_hf", "terminalbench_hf"} and not self.dataset_name:
             raise ValueError("dataset_name must be set for HF-backed prompt sources")
         if self.prompt_source == "translation_hf":
             if not self.dataset_source_language or not self.dataset_target_language:

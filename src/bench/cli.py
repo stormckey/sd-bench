@@ -122,6 +122,27 @@ def _short_method(method: str) -> str:
     }.get(method, method)
 
 
+def _method_label(config: dict) -> str:
+    """Return a readable method label, including suffix source-mode ablations."""
+    method = _short_method(config.get("method", "?"))
+    draft = config.get("draft_model")
+    if draft:
+        method += f" ({draft.split('/')[-1]})"
+
+    if config.get("method") == "suffix_speculative":
+        source_mode = (
+            config.get("method_options", {}) or {}
+        ).get("suffix_decoding_source_mode", "local_and_global")
+        suffix_mode_label = {
+            "local_only": " [local]",
+            "global_only": " [global]",
+            "local_and_global": " [local+global]",
+        }.get(source_mode, f" [{source_mode}]")
+        method += suffix_mode_label
+
+    return method
+
+
 _SPINNER_FRAMES = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]
 
 
@@ -156,10 +177,7 @@ def _print_table(results: list[dict], config_paths: list[Path]) -> None:
     for r in results:
         cfg = r.get("config", {})
         s = r.get("summary", {})
-        method = _short_method(cfg.get("method", "?"))
-        draft = cfg.get("draft_model")
-        if draft:
-            method += f" ({draft.split('/')[-1]})"
+        method = _method_label(cfg)
 
         tokens = s.get("total_generated_tokens", "-")
         tps = s.get("overall_tokens_per_second")
@@ -212,14 +230,64 @@ def _print_table(results: list[dict], config_paths: list[Path]) -> None:
             if cfg.get("method") == "autoregressive":
                 continue
             s = r.get("summary", {})
-            method = _short_method(cfg.get("method", "?"))
-            draft = cfg.get("draft_model")
-            if draft:
-                method += f" ({draft.split('/')[-1]})"
+            method = _method_label(cfg)
             tps = s.get("overall_tokens_per_second")
             if isinstance(tps, (int, float)):
                 speedup = tps / baseline_tps
                 print(f"    {method}: {speedup:.2f}x")
+
+    speculative_rows: list[list[str]] = []
+    speculative_headers = [
+        "Method",
+        "Steps",
+        "Prop/Step",
+        "Acc/Step",
+        "AccFrac",
+        "E2E Tok/s",
+    ]
+    for r in results:
+        cfg = r.get("config", {})
+        s = r.get("summary", {})
+        steps = s.get("speculation_steps")
+        if not isinstance(steps, int) or steps <= 0:
+            continue
+
+        method = _method_label(cfg)
+
+        proposed_per_step = s.get("mean_proposed_tokens_per_step")
+        accepted_per_step = s.get("mean_accepted_tokens_per_step")
+        accepted_fraction = s.get("accepted_tokens_fraction")
+        end_to_end_tps = s.get("end_to_end_tokens_per_second")
+
+        speculative_rows.append([
+            method,
+            str(steps),
+            f"{proposed_per_step:.1f}" if isinstance(proposed_per_step, (int, float)) else "-",
+            f"{accepted_per_step:.1f}" if isinstance(accepted_per_step, (int, float)) else "-",
+            f"{accepted_fraction:.1%}" if isinstance(accepted_fraction, (int, float)) else "-",
+            f"{end_to_end_tps:.1f}" if isinstance(end_to_end_tps, (int, float)) else "-",
+        ])
+
+    if speculative_rows:
+        print()
+        print("  Speculation details:")
+        spec_col_widths = [len(h) for h in speculative_headers]
+        for row in speculative_rows:
+            for i, cell in enumerate(row):
+                spec_col_widths[i] = max(spec_col_widths[i], len(cell))
+        spec_header_line = "  ".join(
+            h.ljust(spec_col_widths[i]) for i, h in enumerate(speculative_headers)
+        )
+        spec_sep_line = "  ".join(
+            "─" * spec_col_widths[i] for i in range(len(speculative_headers))
+        )
+        print(f"  {spec_header_line}")
+        print(f"  {spec_sep_line}")
+        for row in speculative_rows:
+            line = "  ".join(
+                cell.ljust(spec_col_widths[i]) for i, cell in enumerate(row)
+            )
+            print(f"  {line}")
 
     print()
 
@@ -276,7 +344,7 @@ def run_compare(args: argparse.Namespace) -> int:
         config_path = config_paths[index - 1]
         try:
             cfg = json.loads(config_path.read_text())
-            label = cfg.get("experiment_name", config_path.stem)
+            label = _method_label(cfg)
         except Exception:
             label = config_path.stem
 

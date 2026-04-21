@@ -21,7 +21,8 @@
   "method_options": {
     "suffix_decoding_num_tokens": 10,
     "suffix_decoding_max_depth": 64,
-    "suffix_decoding_min_prob": 0.1
+    "suffix_decoding_min_prob": 0.1,
+    "suffix_decoding_source_mode": "local_and_global"
   },
   "notes": "SWE-bench test split using suffix speculative decoding."
 }

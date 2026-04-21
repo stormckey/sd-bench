@@ -1,0 +1,21 @@
+{
+  "experiment_name": "spider-qwen8b-vanilla",
+  "method": "autoregressive",
+  "target_model": "Qwen/Qwen3-8B",
+  "draft_model": null,
+  "prompt_source": "spider_hf",
+  "dataset_name": "lamini/spider_text_to_sql",
+  "dataset_split": "validation",
+  "dataset_streaming": true,
+  "enable_thinking": false,
+  "batch_size": 1,
+  "max_new_tokens": 512,
+  "do_sample": false,
+  "temperature": 0.0,
+  "top_p": 1.0,
+  "torch_dtype": "bfloat16",
+  "gpu": "L40S",
+  "seed": 1234,
+  "limit": 50,
+  "notes": "Spider 1.0 text-to-SQL validation split using autoregressive decoding."
+}

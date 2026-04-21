@@ -17,6 +17,7 @@ class BatchRecord:
     acceptance_rate: float | None
     accepted_draft_tokens: int | None
     proposed_draft_tokens: int | None
+    speculation_steps: int | None
     method_metrics: dict[str, Any] | None
     max_memory_allocated_mb: float | None
     max_memory_reserved_mb: float | None
@@ -30,6 +31,9 @@ def summarize_records(records: list[BatchRecord]) -> dict[str, Any]:
     total_prompts = sum(record.batch_size for record in records)
     total_latency = sum(record.batch_latency_seconds for record in records)
     total_new_tokens = sum(record.total_new_tokens for record in records)
+    total_accepted_draft_tokens = sum(record.accepted_draft_tokens or 0 for record in records)
+    total_proposed_draft_tokens = sum(record.proposed_draft_tokens or 0 for record in records)
+    total_speculation_steps = sum(record.speculation_steps or 0 for record in records)
     peak_allocated = [
         record.max_memory_allocated_mb
         for record in records
@@ -52,6 +56,22 @@ def summarize_records(records: list[BatchRecord]) -> dict[str, Any]:
         "total_generated_tokens": total_new_tokens,
         "overall_tokens_per_second": (
             total_new_tokens / total_latency if total_latency > 0 else 0.0
+        ),
+        "speculation_steps": total_speculation_steps if total_speculation_steps > 0 else None,
+        "mean_proposed_tokens_per_step": (
+            total_proposed_draft_tokens / total_speculation_steps
+            if total_speculation_steps > 0
+            else None
+        ),
+        "mean_accepted_tokens_per_step": (
+            total_accepted_draft_tokens / total_speculation_steps
+            if total_speculation_steps > 0
+            else None
+        ),
+        "accepted_tokens_fraction": (
+            total_accepted_draft_tokens / total_new_tokens
+            if total_new_tokens > 0 and total_accepted_draft_tokens > 0
+            else None
         ),
         "peak_memory_allocated_mb": max(peak_allocated) if peak_allocated else None,
         "peak_memory_reserved_mb": max(peak_reserved) if peak_reserved else None,

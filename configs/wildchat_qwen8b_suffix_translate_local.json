@@ -1,22 +1,19 @@
 {
-  "experiment_name": "wmt14-qwen8b-suffix-fr-en",
+  "experiment_name": "wildchat-qwen8b-suffix-translate",
   "method": "suffix_speculative",
   "target_model": "Qwen/Qwen3-8B",
   "draft_model": null,
-  "prompt_source": "translation_hf",
+  "prompt_source": "wildchat_hf",
   "prompt_path": "data/prompts/sample_prompts.jsonl",
-  "dataset_name": "wmt14",
-  "dataset_config_name": "fr-en",
-  "dataset_split": "test",
-  "dataset_language": null,
-  "dataset_source_language": "fr",
-  "dataset_target_language": "en",
+  "dataset_name": "allenai/WildChat",
+  "dataset_split": "train",
+  "dataset_language": "English",
   "dataset_streaming": true,
-  "dataset_max_messages": null,
-  "dataset_min_user_chars": 60,
-  "dataset_max_user_chars": 260,
-  "dataset_include_keywords": null,
-  "dataset_exclude_keywords": null,
+  "dataset_max_messages": 2,
+  "dataset_min_user_chars": 10,
+  "dataset_max_user_chars": 180,
+  "dataset_include_keywords": ["translate"],
+  "dataset_exclude_keywords": ["python", "code", "story", "poem", "roleplay", "rewrite", "paraphrase"],
   "enable_thinking": false,
   "separate_assistant_gpu": false,
   "batch_size": 1,
@@ -33,7 +30,7 @@
     "suffix_decoding_num_tokens": 10,
     "suffix_decoding_max_depth": 64,
     "suffix_decoding_min_prob": 0.1,
-    "suffix_decoding_source_mode": "local_and_global"
+    "suffix_decoding_source_mode": "local_only"
   },
-  "notes": "WMT14 French-to-English translation slice using suffix decoding."
+  "notes": "Filtered WildChat slice focused on short translation prompts only, using suffix decoding."
 }

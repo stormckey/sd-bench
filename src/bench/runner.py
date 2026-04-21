@@ -157,6 +157,7 @@ def run_generation_batches(
                 acceptance_rate=method_metrics.get("acceptance_rate"),
                 accepted_draft_tokens=method_metrics.get("accepted_draft_tokens"),
                 proposed_draft_tokens=method_metrics.get("proposed_draft_tokens"),
+                speculation_steps=method_metrics.get("speculation_steps"),
                 method_metrics=method_metrics or None,
                 max_memory_allocated_mb=max_allocated_mb,
                 max_memory_reserved_mb=max_reserved_mb,

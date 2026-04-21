@@ -132,6 +132,6 @@ The main metric to compare is `overall_tokens_per_second`.
 ## Notes
 
 - Benchmark workers install the vendored local checkout at `./transformers`, not PyPI.
-- The current test checkout tracks `https://github.com/ErwinZhou/transformers.git` on branch `suffix-feat` at commit `acc6fa047f42551cbc9ee8a22629b532608fd7fa`.
+- The current test checkout tracks `https://github.com/ErwinZhou/transformers.git` on branch `suffix-feat` at commit `76d60fa5751e4d66423523b9d78680743ff666fd`.
 - Prompt lookup currently shows the clearest speedup on the retained benchmark sets
 - Draft-model speculation is supported, but may be slower than vanilla for some model pairs

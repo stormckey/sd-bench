@@ -235,7 +235,24 @@ class SuffixSpeculativeMethod(BenchmarkMethod):
         from transformers.generation.suffix_tree import SuffixDecodingCache
 
         max_depth = config.get_method_option("suffix_decoding_max_depth", 64)
-        cache = SuffixDecodingCache(max_depth=max_depth, max_cached_requests=-1)
+        source_mode = config.get_method_option(
+            "suffix_decoding_source_mode",
+            "local_and_global",
+        )
+        if source_mode not in {"local_and_global", "local_only", "global_only"}:
+            raise ValueError(
+                "suffix_decoding_source_mode must be one of: "
+                "'local_and_global', 'local_only', 'global_only'"
+            )
+        cache_max_requests = config.get_method_option(
+            "suffix_decoding_cache_max_requests",
+            -1,
+        )
+        cache = SuffixDecodingCache(
+            max_depth=max_depth,
+            max_cached_requests=cache_max_requests,
+            source_mode=source_mode,
+        )
         return MethodResources(extras={"suffix_decoding_cache": cache})
 
     def build_generation_kwargs(

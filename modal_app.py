@@ -18,6 +18,7 @@ from bench.config import ExperimentConfig, load_config
 from bench.datasets import (
     load_alpaca_hf_prompts,
     load_jsonl_prompts,
+    load_spider_hf_prompts,
     load_swebench_hf_prompts,
     load_terminalbench_hf_prompts,
     load_translation_hf_prompts,
@@ -244,6 +245,13 @@ class BenchmarkWorker:
                 min_source_chars=config.dataset_min_user_chars,
                 max_source_chars=config.dataset_max_user_chars,
             )
+        if config.prompt_source == "spider_hf":
+            return load_spider_hf_prompts(
+                dataset_name=config.dataset_name or "lamini/spider_text_to_sql",
+                split=config.dataset_split,
+                limit=config.limit,
+                streaming=config.dataset_streaming,
+            )
         if config.prompt_source == "swebench_hf":
             return load_swebench_hf_prompts(
                 dataset_name=config.dataset_name or "princeton-nlp/SWE-bench",
@@ -287,5 +295,12 @@ def main(
     started = time.perf_counter()
     result = worker_cls().run_experiment.remote(config.to_dict(), prompts)
     result["client_wall_seconds"] = time.perf_counter() - started
+    total_generated_tokens = result.get("summary", {}).get("total_generated_tokens")
+    client_wall_seconds = result["client_wall_seconds"]
+    result.setdefault("summary", {})["end_to_end_tokens_per_second"] = (
+        total_generated_tokens / client_wall_seconds
+        if isinstance(total_generated_tokens, (int, float)) and client_wall_seconds > 0
+        else None
+    )
 
     print(json.dumps(result, indent=2, sort_keys=True))

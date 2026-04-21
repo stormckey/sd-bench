@@ -38,6 +38,12 @@ BUILTIN_SUITES: dict[str, list[str]] = {
         "configs/swebench_qwen8b_prompt_lookup.json",
         "configs/swebench_qwen8b_suffix.json",
     ],
+    "spider": [
+        "configs/spider_qwen8b_vanilla.json",
+        "configs/spider_qwen8b_draft.json",
+        "configs/spider_qwen8b_prompt_lookup.json",
+        "configs/spider_qwen8b_suffix.json",
+    ],
     "terminalbench": [
         "configs/terminalbench_qwen8b_vanilla.json",
         "configs/terminalbench_qwen8b_draft.json",
