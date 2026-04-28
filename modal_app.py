@@ -18,6 +18,9 @@ from bench.config import ExperimentConfig, load_config
 from bench.datasets import (
     load_alpaca_hf_prompts,
     load_jsonl_prompts,
+    load_spider_hf_prompts,
+    load_swebench_hf_prompts,
+    load_terminalbench_hf_prompts,
     load_translation_hf_prompts,
     load_wildchat_hf_prompts,
     load_xsum_hf_prompts,
@@ -28,7 +31,7 @@ from bench.runner import run_generation_batches, write_result_bundle
 APP_NAME = "llm-serving-bench"
 HF_CACHE_DIR = "/cache/hf"
 RESULTS_DIR = "/results"
-TRANSFORMERS_GIT_URL = "git+https://github.com/ErwinZhou/transformers.git"
+TRANSFORMERS_LOCAL_DIR = ROOT / "transformers"
 
 image = (
     modal.Image.debian_slim(python_version="3.11")
@@ -38,8 +41,14 @@ image = (
         "datasets>=4.4.0",
         "sentencepiece>=0.2.0",
         "torch>=2.8.0",
-        TRANSFORMERS_GIT_URL,
     )
+    .add_local_dir(
+        str(TRANSFORMERS_LOCAL_DIR),
+        remote_path="/root/transformers",
+        copy=True,
+        ignore=[".git", "tests", "docs", "examples", "docker", "notebooks", "__pycache__"],
+    )
+    .run_commands("pip install /root/transformers")
     .add_local_dir(SRC, remote_path="/root/src")
 )
 
@@ -236,6 +245,27 @@ class BenchmarkWorker:
                 min_source_chars=config.dataset_min_user_chars,
                 max_source_chars=config.dataset_max_user_chars,
             )
+        if config.prompt_source == "spider_hf":
+            return load_spider_hf_prompts(
+                dataset_name=config.dataset_name or "lamini/spider_text_to_sql",
+                split=config.dataset_split,
+                limit=config.limit,
+                streaming=config.dataset_streaming,
+            )
+        if config.prompt_source == "swebench_hf":
+            return load_swebench_hf_prompts(
+                dataset_name=config.dataset_name or "princeton-nlp/SWE-bench",
+                split=config.dataset_split,
+                limit=config.limit,
+                streaming=config.dataset_streaming,
+            )
+        if config.prompt_source == "terminalbench_hf":
+            return load_terminalbench_hf_prompts(
+                dataset_name=config.dataset_name or "ia03/terminal-bench",
+                split=config.dataset_split,
+                limit=config.limit,
+                streaming=config.dataset_streaming,
+            )
         raise ValueError(f"Unsupported prompt_source: {config.prompt_source}")
 
 
@@ -265,5 +295,12 @@ def main(
     started = time.perf_counter()
     result = worker_cls().run_experiment.remote(config.to_dict(), prompts)
     result["client_wall_seconds"] = time.perf_counter() - started
+    total_generated_tokens = result.get("summary", {}).get("total_generated_tokens")
+    client_wall_seconds = result["client_wall_seconds"]
+    result.setdefault("summary", {})["end_to_end_tokens_per_second"] = (
+        total_generated_tokens / client_wall_seconds
+        if isinstance(total_generated_tokens, (int, float)) and client_wall_seconds > 0
+        else None
+    )
 
     print(json.dumps(result, indent=2, sort_keys=True))

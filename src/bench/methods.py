@@ -219,6 +219,136 @@ class PromptLookupMethod(BenchmarkMethod):
         }
 
 
+class SuffixSpeculativeMethod(BenchmarkMethod):
+    def prepare_resources(
+        self,
+        config: ExperimentConfig,
+        *,
+        target_tokenizer: Any,
+        torch_dtype: Any,
+        token: str | None,
+        hf_cache_dir: str,
+        auto_model_cls: Any,
+        auto_tokenizer_cls: Any,
+        cuda_device_count: int,
+    ) -> MethodResources:
+        from transformers.generation.suffix_tree import SuffixDecodingCache
+
+        max_depth = config.get_method_option("suffix_decoding_max_depth", 64)
+        source_mode = config.get_method_option(
+            "suffix_decoding_source_mode",
+            "local_and_global",
+        )
+        if source_mode not in {"local_and_global", "local_only", "global_only"}:
+            raise ValueError(
+                "suffix_decoding_source_mode must be one of: "
+                "'local_and_global', 'local_only', 'global_only'"
+            )
+        cache_max_requests = config.get_method_option(
+            "suffix_decoding_cache_max_requests",
+            -1,
+        )
+        cache = SuffixDecodingCache(
+            max_depth=max_depth,
+            max_cached_requests=cache_max_requests,
+            source_mode=source_mode,
+        )
+        return MethodResources(extras={"suffix_decoding_cache": cache})
+
+    def build_generation_kwargs(
+        self,
+        config: ExperimentConfig,
+        *,
+        tokenizer: Any,
+        resources: MethodResources,
+    ) -> dict[str, Any]:
+        suffix_decoding_num_tokens = config.get_method_option(
+            "suffix_decoding_num_tokens", 10,
+        )
+        suffix_decoding_max_depth = config.get_method_option(
+            "suffix_decoding_max_depth", 64,
+        )
+        suffix_decoding_min_prob = config.get_method_option(
+            "suffix_decoding_min_prob", 0.1,
+        )
+        kwargs = {
+            "suffix_decoding_num_tokens": suffix_decoding_num_tokens,
+            "suffix_decoding_max_depth": suffix_decoding_max_depth,
+            "suffix_decoding_min_prob": suffix_decoding_min_prob,
+        }
+        cache = resources.extras.get("suffix_decoding_cache")
+        if cache is not None:
+            kwargs["suffix_decoding_cache"] = cache
+        return kwargs
+
+    @contextmanager
+    def generation_context(
+        self,
+        config: ExperimentConfig,
+        *,
+        resources: MethodResources,
+    ):
+        from transformers.generation.candidate_generator import SuffixDecodingCandidateGenerator
+
+        stats = SpeculationStats()
+        original_update = SuffixDecodingCandidateGenerator.update_candidate_strategy
+
+        def wrapped_update(self, input_ids: Any, scores: Any, num_matches: int):
+            if hasattr(num_matches, "item"):
+                num_matches = int(num_matches.item())
+            else:
+                num_matches = int(num_matches)
+
+            proposed_draft_tokens = 0
+            if scores is not None:
+                try:
+                    proposed_draft_tokens = max(len(scores[0]) - 1, 0)
+                except Exception:
+                    proposed_draft_tokens = 0
+
+            if proposed_draft_tokens > 0:
+                stats.proposed_draft_tokens += proposed_draft_tokens
+                stats.accepted_draft_tokens += min(num_matches, proposed_draft_tokens)
+                stats.speculation_steps += 1
+
+            return original_update(self, input_ids, scores, num_matches)
+
+        SuffixDecodingCandidateGenerator.update_candidate_strategy = wrapped_update
+        try:
+            yield stats
+        finally:
+            SuffixDecodingCandidateGenerator.update_candidate_strategy = original_update
+
+    def build_batch_metrics(self, tracker: Any) -> dict[str, Any]:
+        if tracker is None:
+            return {}
+        return {
+            "acceptance_rate": tracker.acceptance_rate,
+            "accepted_draft_tokens": tracker.accepted_draft_tokens,
+            "proposed_draft_tokens": tracker.proposed_draft_tokens,
+            "speculation_steps": tracker.speculation_steps,
+        }
+
+    def summarize_records(self, records: list[BatchRecord]) -> dict[str, Any]:
+        accepted_draft_tokens = sum(
+            record.accepted_draft_tokens or 0
+            for record in records
+        )
+        proposed_draft_tokens = sum(
+            record.proposed_draft_tokens or 0
+            for record in records
+        )
+        return {
+            "accepted_draft_tokens": accepted_draft_tokens if proposed_draft_tokens > 0 else None,
+            "proposed_draft_tokens": proposed_draft_tokens if proposed_draft_tokens > 0 else None,
+            "acceptance_rate": (
+                accepted_draft_tokens / proposed_draft_tokens
+                if proposed_draft_tokens > 0
+                else None
+            ),
+        }
+
+
 class UnimplementedMethod(BenchmarkMethod):
     def __init__(self, method_name: str):
         self.method_name = method_name
@@ -237,7 +367,7 @@ METHOD_REGISTRY: dict[str, BenchmarkMethod] = {
     "autoregressive": AutoregressiveMethod(),
     "draft_speculative": DraftSpeculativeMethod(),
     "prompt_lookup": PromptLookupMethod(),
-    "suffix_speculative": UnimplementedMethod("suffix_speculative"),
+    "suffix_speculative": SuffixSpeculativeMethod(),
     "tree_speculative": UnimplementedMethod("tree_speculative"),
 }
 

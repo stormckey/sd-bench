@@ -7,10 +7,22 @@ Supported methods:
 - `autoregressive`
 - `draft_speculative`
 - `prompt_lookup`
+- `suffix`
 
 The benchmark runner executes on Modal GPUs, reads prompts from Hugging Face datasets or local JSONL, and writes `raw.jsonl` plus `summary.json` for each run.
 
 ## Quick Start
+
+Place the Transformers fork at `./transformers` before running benchmarks. `modal_app.py` mounts that exact repo-root directory into the Modal image and installs it from there.
+
+Current test checkout:
+
+```bash
+git clone https://github.com/ErwinZhou/transformers.git transformers
+cd transformers
+git checkout suffix-feat
+cd ..
+```
 
 ```bash
 python3 -m venv .venv
@@ -69,6 +81,8 @@ modal run modal_app.py --config-path configs/wmt14_qwen8b_draft_fr_en.json --gpu
 
 - `default` / `wmt14`: WMT14 French-to-English configs
 - `wildchat`: WildChat translation slice
+- `swebench`: SWE-bench code generation tasks
+- `terminalbench`: TerminalBench command-line tasks
 
 Example configs live in `configs/`.
 
@@ -117,6 +131,7 @@ The main metric to compare is `overall_tokens_per_second`.
 
 ## Notes
 
-- Benchmark workers install a custom `transformers` fork: `git+https://github.com/ErwinZhou/transformers.git`
+- Benchmark workers install the vendored local checkout at `./transformers`, not PyPI.
+- The current test checkout tracks `https://github.com/ErwinZhou/transformers.git` on branch `suffix-feat` at commit `76d60fa5751e4d66423523b9d78680743ff666fd`.
 - Prompt lookup currently shows the clearest speedup on the retained benchmark sets
 - Draft-model speculation is supported, but may be slower than vanilla for some model pairs

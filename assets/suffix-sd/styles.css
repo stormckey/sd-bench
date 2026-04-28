@@ -1,0 +1,50 @@
+@import "../shared.css";
+
+/* ── Green theme ── */
+:root {
+  --green-soft: #5dae65;
+  --green-border: #71a879;
+}
+
+.theme-green .method-index,
+.theme-green .section-badge { background: var(--green); }
+
+.method-header h2   { color: var(--green); }
+.section-heading h3 { color: var(--green); }
+.accent-green       { color: #3ea84f; }
+
+/* ── Focus badge ── */
+.method-panel-focus {
+  border-color: var(--green-border);
+}
+
+.focus-star {
+  position: absolute;
+  top: -14px;
+  right: 18px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--green-soft);
+  color: #fff;
+  font-size: 22px;
+  font-weight: 800;
+  border: 3px solid #fff;
+}
+
+/* ── Footer variant ── */
+.panel-footer-green {
+  background: #f4fbf4;
+  border-color: #b6d8bb;
+}
+
+/* ── Suffix tree SVG ── */
+.spec-tree-svg {
+  display: block;
+  height: auto;
+}
+
+/* ── Icons ── */
+.icon-sa { width: 22px; height: 22px; color: var(--green); }

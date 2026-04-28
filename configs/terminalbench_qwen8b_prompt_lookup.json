@@ -1,0 +1,22 @@
+{
+  "experiment_name": "terminalbench-qwen8b-prompt-lookup",
+  "method": "prompt_lookup",
+  "target_model": "Qwen/Qwen3-8B",
+  "draft_model": null,
+  "prompt_source": "terminalbench_hf",
+  "dataset_name": "ia03/terminal-bench",
+  "dataset_split": "test",
+  "dataset_streaming": true,
+  "enable_thinking": false,
+  "batch_size": 1,
+  "max_new_tokens": 1024,
+  "prompt_lookup_num_tokens": 5,
+  "do_sample": false,
+  "temperature": 0.0,
+  "top_p": 1.0,
+  "torch_dtype": "bfloat16",
+  "gpu": "L40S",
+  "seed": 1234,
+  "limit": 50,
+  "notes": "TerminalBench test split using prompt lookup decoding."
+}

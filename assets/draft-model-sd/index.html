@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Draft-Model Speculative Decoding</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="page">
+      <article class="method-panel theme-purple">
+        <header class="method-header">
+          <div>
+            <h2>Draft-Model Speculative Decoding</h2>
+            <p>Use a small draft model to propose multiple tokens</p>
+          </div>
+        </header>
+
+        <div class="panel-body">
+          <section class="panel-section">
+            <div class="section-heading">
+              <span class="section-badge">1</span>
+              <h3>Input Prompt / Context</h3>
+            </div>
+            <div class="token-row token-row-nowrap token-row-prompt">
+              <span class="token-chip token-prompt">Where</span>
+              <span class="token-chip token-prompt">is</span>
+              <span class="token-chip token-prompt">the</span>
+              <span class="token-chip token-prompt">capital</span>
+              <span class="token-chip token-prompt">of</span>
+              <span class="token-chip token-prompt">China?</span>
+            </div>
+          </section>
+
+          <div class="proposal-grid">
+            <div class="draft-card theme-soft-purple">
+              <div class="draft-icon-wrap">
+                <svg class="icon icon-draft" viewBox="0 0 32 32" aria-hidden="true">
+                  <circle cx="10" cy="10" r="2.2"></circle>
+                  <circle cx="22" cy="10" r="2.2"></circle>
+                  <circle cx="16" cy="19" r="2.2"></circle>
+                  <circle cx="5" cy="19" r="2.2"></circle>
+                  <circle cx="27" cy="19" r="2.2"></circle>
+                  <circle cx="10" cy="28" r="2.2"></circle>
+                  <circle cx="22" cy="28" r="2.2"></circle>
+                  <path d="M10 10h12M10 10l6 9m6-9l-6 9M5 19h22M5 19l5 9m17-9l-5 9M10 28h12"></path>
+                </svg>
+              </div>
+              <h4>Draft Model <span>(Small)</span></h4>
+              <p>Propose k tokens</p>
+            </div>
+
+            <div class="proposal-block">
+              <div class="flow-arrow theme-stroke-purple short"></div>
+              <div class="token-row token-row-nowrap token-row-candidates">
+                <span class="token-chip token-candidate">The</span>
+                <span class="token-chip token-candidate">capital</span>
+                <span class="token-chip token-candidate">of</span>
+                <span class="token-chip token-candidate">Japan</span>
+                <span class="token-chip token-candidate">is</span>
+              </div>
+              <p class="inline-caption theme-copy-purple">Candidate Proposal (k=5)</p>
+            </div>
+          </div>
+
+          <div class="model-card theme-soft-blue">
+            <div class="model-visual">
+              <svg class="icon icon-llm" viewBox="0 0 32 32" aria-hidden="true">
+                <circle cx="8" cy="8" r="2.3"></circle>
+                <circle cx="22" cy="8" r="2.3"></circle>
+                <circle cx="15" cy="18" r="2.3"></circle>
+                <circle cx="4" cy="18" r="2.3"></circle>
+                <circle cx="26" cy="18" r="2.3"></circle>
+                <circle cx="8" cy="28" r="2.3"></circle>
+                <circle cx="22" cy="28" r="2.3"></circle>
+                <path d="M8 8h14M8 8l-4 10m18-10l4 10M4 18h22M4 18l4 10m18-10l-4 10M8 28h14M8 8l7 10m7-10l-7 10m0 0l-7 10m7-10l7 10"></path>
+              </svg>
+            </div>
+            <div class="model-copy">
+              <h4>Target LLM <span>(Large Model)</span></h4>
+            </div>
+            <div class="cache-block">
+              <svg class="icon icon-cache" viewBox="0 0 24 24" aria-hidden="true">
+                <ellipse cx="12" cy="5" rx="8" ry="3"></ellipse>
+                <path d="M4 5v13c0 1.7 3.6 3 8 3s8-1.3 8-3V5"></path>
+                <path d="M4 11c0 1.7 3.6 3 8 3s8-1.3 8-3"></path>
+                <path d="M4 17c0 1.7 3.6 3 8 3s8-1.3 8-3"></path>
+              </svg>
+              <span>KV Cache</span>
+            </div>
+          </div>
+
+          <section class="panel-section grow">
+            <div class="section-heading">
+              <span class="section-badge">2</span>
+              <h3>Verification by target model</h3>
+            </div>
+            <div class="verification-stack">
+              <div class="accepted-rejected-row">
+                <div class="verification-segment">
+                  <div class="token-row token-row-nowrap token-row-accepted">
+                    <span class="token-chip token-accepted">The</span>
+                    <span class="token-chip token-accepted">capital</span>
+                    <span class="token-chip token-accepted">of</span>
+                  </div>
+                  <span class="segment-label accept-label">Accepted</span>
+                </div>
+                <div class="verification-segment">
+                  <div class="token-row token-row-nowrap token-row-rejected">
+                    <span class="token-chip token-rejected">Japan</span>
+                    <span class="token-chip token-rejected">is</span>
+                  </div>
+                  <span class="segment-label reject-label">Rejected</span>
+                </div>
+              </div>
+              <div class="flow-arrow theme-stroke-purple"></div>
+              <p class="resume-note">Resume from last accepted token</p>
+            </div>
+          </section>
+
+          <div class="model-card theme-soft-blue">
+            <div class="model-visual">
+              <svg class="icon icon-llm" viewBox="0 0 32 32" aria-hidden="true">
+                <circle cx="8" cy="8" r="2.3"></circle>
+                <circle cx="22" cy="8" r="2.3"></circle>
+                <circle cx="15" cy="18" r="2.3"></circle>
+                <circle cx="4" cy="18" r="2.3"></circle>
+                <circle cx="26" cy="18" r="2.3"></circle>
+                <circle cx="8" cy="28" r="2.3"></circle>
+                <circle cx="22" cy="28" r="2.3"></circle>
+                <path d="M8 8h14M8 8l-4 10m18-10l4 10M4 18h22M4 18l4 10m18-10l-4 10M8 28h14M8 8l7 10m7-10l-7 10m0 0l-7 10m7-10l7 10"></path>
+              </svg>
+            </div>
+            <div class="model-copy">
+              <h4>Target LLM <span>(Large Model)</span></h4>
+            </div>
+            <div class="cache-block">
+              <svg class="icon icon-cache" viewBox="0 0 24 24" aria-hidden="true">
+                <ellipse cx="12" cy="5" rx="8" ry="3"></ellipse>
+                <path d="M4 5v13c0 1.7 3.6 3 8 3s8-1.3 8-3V5"></path>
+                <path d="M4 11c0 1.7 3.6 3 8 3s8-1.3 8-3"></path>
+                <path d="M4 17c0 1.7 3.6 3 8 3s8-1.3 8-3"></path>
+              </svg>
+              <span>KV Cache</span>
+            </div>
+          </div>
+
+          <section class="panel-section">
+            <div class="section-heading">
+              <span class="section-badge">3</span>
+              <h3>Continue generation</h3>
+            </div>
+            <div class="row-between">
+              <div class="token-row token-row-nowrap token-row-output">
+                <span class="token-chip token-prompt">Where</span>
+                <span class="token-chip token-prompt">is</span>
+                <span class="token-chip token-prompt">the</span>
+                <span class="token-chip token-prompt">capital</span>
+                <span class="token-chip token-prompt">of</span>
+                <span class="token-chip token-prompt">China?</span>
+                <span class="token-chip token-accepted">The</span>
+                <span class="token-chip token-accepted">capital</span>
+                <span class="token-chip token-accepted">of</span>
+                <span class="token-chip token-prompt">…</span>
+              </div>
+              <svg class="icon icon-check theme-icon-green" viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="12" cy="12" r="9"></circle>
+                <path d="M8 12.5l2.5 2.5L16.5 9"></path>
+              </svg>
+            </div>
+          </section>
+        </div>
+
+        <footer class="panel-footer">
+          <div class="footer-line">
+            <svg class="icon icon-clock" viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="12" r="9"></circle>
+              <path d="M12 7v5l3 2"></path>
+            </svg>
+            <p><strong>Pros:</strong> Higher throughput than autoregressive</p>
+          </div>
+          <div class="footer-line">
+            <svg class="icon icon-gauge" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M4 16a8 8 0 1 1 16 0"></path>
+              <path d="M12 16l4-6"></path>
+            </svg>
+            <p><strong>Cons:</strong> Needs auxiliary model, verification overhead, rejections waste compute</p>
+          </div>
+          <p class="footer-best"><strong>Best for:</strong> General workloads with moderate repetition</p>
+        </footer>
+      </article>
+    </main>
+  </body>
+</html>

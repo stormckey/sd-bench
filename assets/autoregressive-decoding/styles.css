@@ -1,0 +1,89 @@
+@import "../shared.css";
+
+/* ── Blue theme ── */
+.theme-blue .method-index,
+.theme-blue .section-badge { background: var(--blue); }
+
+.method-header h2   { color: var(--blue); }
+.section-heading h3 { color: var(--blue); }
+.theme-stroke-blue  { color: var(--blue); }
+
+/* ── Smaller prompt chips (tight row in this panel) ── */
+.token-row-prompt-method1 .token-chip {
+  min-height: 21px;
+  padding-inline: 6px;
+  font-size: 8px;
+}
+
+/* ── Step arrow (sequential generation visualization) ── */
+.step-arrow {
+  width: 2px;
+  height: 18px;
+  position: relative;
+  background: currentColor;
+}
+
+.step-arrow::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -1px;
+  width: 8px;
+  height: 8px;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: translateX(-50%) rotate(45deg);
+}
+
+/* ── Timeline (autoregressive only) ── */
+.timeline-stack {
+  display: grid;
+  grid-template-columns: 28px 1fr;
+  gap: 8px;
+}
+
+.timeline-rail {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 0 2px;
+}
+
+.timeline-rail::before {
+  content: "";
+  position: absolute;
+  top: 10px;
+  bottom: 10px;
+  border-left: 1.8px dashed #7588bd;
+}
+
+.timeline-mark {
+  position: relative;
+  z-index: 1;
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  border: 1.5px solid #7588bd;
+  border-radius: 50%;
+  background: #fff;
+  font-size: 9px;
+  line-height: 1;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.timeline-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.timeline-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}

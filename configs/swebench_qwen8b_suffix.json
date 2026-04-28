@@ -1,0 +1,28 @@
+{
+  "experiment_name": "swebench-qwen8b-suffix",
+  "method": "suffix_speculative",
+  "target_model": "Qwen/Qwen3-8B",
+  "draft_model": null,
+  "prompt_source": "swebench_hf",
+  "dataset_name": "princeton-nlp/SWE-bench",
+  "dataset_split": "test",
+  "dataset_streaming": true,
+  "enable_thinking": false,
+  "batch_size": 1,
+  "max_new_tokens": 2048,
+  "prompt_lookup_num_tokens": null,
+  "do_sample": false,
+  "temperature": 0.0,
+  "top_p": 1.0,
+  "torch_dtype": "bfloat16",
+  "gpu": "L40S",
+  "seed": 1234,
+  "limit": 50,
+  "method_options": {
+    "suffix_decoding_num_tokens": 10,
+    "suffix_decoding_max_depth": 64,
+    "suffix_decoding_min_prob": 0.1,
+    "suffix_decoding_source_mode": "local_and_global"
+  },
+  "notes": "SWE-bench test split using suffix speculative decoding."
+}

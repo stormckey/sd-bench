@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Suffix Speculative Decoding Poster</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="poster-shell">
+      <article class="poster" data-mode="default">
+        <header class="hero band">
+          <div class="hero-copy">
+            <p class="eyebrow">MLSys Project Poster</p>
+            <h1>Suffix Speculative Decoding for Faster LLM Serving</h1>
+            <p class="hero-thesis">
+              Suffix-based speculation improves LLM serving throughput without a
+              separate draft model.
+            </p>
+            <p class="hero-meta">
+              Chenhao Gao, Yuchen Zhou, Zihao Du
+              <span class="meta-sep">|</span>
+              Carnegie Mellon University
+            </p>
+          </div>
+
+          <div class="hero-badges" aria-label="Top results">
+            <section class="badge-card accent-blue">
+              <p class="badge-value">2.02x</p>
+              <p class="badge-label">WMT14 speedup over vanilla</p>
+            </section>
+            <section class="badge-card accent-green">
+              <p class="badge-value">4.40x</p>
+              <p class="badge-label">WildChat translate speedup</p>
+            </section>
+            <section class="badge-card accent-orange">
+              <p class="badge-value">2.47x</p>
+              <p class="badge-label">SWE-bench speedup</p>
+            </section>
+          </div>
+        </header>
+
+        <section class="context-strip band">
+          <article class="context-card">
+            <p class="card-kicker">Problem</p>
+            <h2>Autoregressive decoding is the bottleneck</h2>
+            <p>
+              Large language models generate one token per target-model forward
+              pass, which directly limits throughput and increases latency.
+            </p>
+          </article>
+
+          <article class="context-card">
+            <p class="card-kicker">Gap in <code>transformers</code></p>
+            <h2>No first-class suffix speculation path</h2>
+            <p>
+              Hugging Face already supports draft-model speculation and prompt
+              lookup, but not suffix speculative decoding inside the assisted
+              generation stack.
+            </p>
+          </article>
+
+          <article class="context-card">
+            <p class="card-kicker">Completed Contribution</p>
+            <h2>We added suffix decoding plus a benchmark harness</h2>
+            <p>
+              Our finished system extends <code>generate()</code> with a
+              suffix-based candidate generator and benchmarks it against unified
+              baselines on Modal.
+            </p>
+          </article>
+        </section>
+
+        <section class="system-row band">
+          <section class="panel architecture-panel">
+            <div class="panel-header">
+              <div>
+                <p class="card-kicker">Figure 1</p>
+                <h2>How suffix decoding compares to the other inference paths</h2>
+              </div>
+              <p class="panel-note">
+                One shared visual explains vanilla decoding, draft-model
+                speculation, prompt lookup, and our suffix-based method.
+              </p>
+            </div>
+
+            <figure class="architecture-figure">
+              <img
+                src="../assets/index.png"
+                alt="Comparison chart showing autoregressive decoding, draft-model speculative decoding, prompt lookup decoding, and suffix speculative decoding."
+              />
+            </figure>
+
+            <section class="architecture-caption-grid">
+              <article class="caption-card">
+                <p class="callout-title">What the figure clarifies</p>
+                <p>
+                  It shows that all speculative methods still depend on
+                  target-model verification. What changes is how candidate
+                  tokens are proposed before that verification step.
+                </p>
+              </article>
+              <article class="caption-card">
+                <p class="callout-title">What is special about suffix decoding</p>
+                <p>
+                  Suffix decoding avoids an auxiliary draft model and extends
+                  beyond exact prompt reuse by proposing continuations from
+                  repeated substrings found in context.
+                </p>
+              </article>
+              <article class="future-box compact">
+                <p class="card-kicker">WIP Extension</p>
+                <h3>Tree-Based Verification</h3>
+                <p>
+                  The completed claim is the linear suffix proposal path shown
+                  here. Multi-branch verification remains future work and is
+                  intentionally outside the reported results.
+                </p>
+              </article>
+            </section>
+          </section>
+
+          <aside class="panel inset-panel">
+            <div class="panel-header">
+              <div>
+                <p class="card-kicker">Reading Guide</p>
+                <h2>How this chart supports the poster story</h2>
+              </div>
+            </div>
+
+            <ul class="config-list">
+              <li>Blue panel: baseline autoregressive decoding, one token per target pass.</li>
+              <li>Purple panel: speculative decoding with a separate small draft model.</li>
+              <li>Orange panel: prompt lookup from repeated n-grams already in context.</li>
+              <li>Green panel: suffix speculation from repeated substrings, with no extra model.</li>
+              <li>Accepted and rejected token rows make the shared verification bottleneck easy to compare across methods.</li>
+            </ul>
+
+            <div class="inset-callout">
+              <p class="callout-title">What changed in <code>transformers</code></p>
+              <p>
+                We implemented a suffix candidate generator and suffix-tree
+                cache support at the same assisted-generation interface already
+                used by the existing speculative baselines.
+              </p>
+            </div>
+
+            <div class="inset-callout">
+              <p class="callout-title">Why this belongs in the report too</p>
+              <p>
+                The paper and poster now share one visual language for the main
+                systems contribution: same verification loop, different proposal
+                mechanisms, and a clean boundary around unfinished tree-based
+                verification.
+              </p>
+            </div>
+          </aside>
+        </section>
+
+        <section class="results band">
+          <div class="results-grid">
+            <article class="panel chart-card hero-chart">
+              <div class="chart-meta">
+                <span class="chart-status">Final Figure</span>
+                <span class="chart-source"><code>figures/speculative_speedup.png</code></span>
+              </div>
+              <h3>Main speedup vs. vanilla</h3>
+              <p class="chart-subtitle">
+                Workloads: WMT14, WildChat translate, WildChat code, SWE-bench
+              </p>
+              <figure class="chart-figure">
+                <img
+                  src="../figures/speculative_speedup.png"
+                  alt="Bar chart showing speedup over vanilla decoding across WMT14, WildChat translate, WildChat code, and SWE-bench."
+                />
+              </figure>
+              <p class="takeaway">
+                <strong>Takeaway:</strong> Suffix speculation beats vanilla on
+                all four completed workloads and is usually the best method
+                overall.
+              </p>
+            </article>
+
+            <article class="panel chart-card">
+              <div class="chart-meta">
+                <span class="chart-status">Final Figure</span>
+                <span class="chart-source">
+                  <code>figures/suffix_ablation_normalized_to_local.png</code>
+                </span>
+              </div>
+              <h3>Suffix source-mode ablation</h3>
+              <p class="chart-subtitle">
+                Compare <code>local</code>, <code>local+global</code>, and
+                <code>global-only</code>
+              </p>
+              <figure class="chart-figure">
+                <img
+                  src="../figures/suffix_ablation_normalized_to_local.png"
+                  alt="Chart comparing suffix throughput for local, local plus global, and global-only source modes."
+                />
+              </figure>
+              <p class="takeaway">
+                <strong>Takeaway:</strong> Local matching drives most of the
+                benefit; global-only matching is usually weak and sometimes
+                harmful.
+              </p>
+            </article>
+
+            <article class="panel chart-card">
+              <div class="chart-meta">
+                <span class="chart-status">Final Figure</span>
+                <span class="chart-source"><code>figures/proposal_vs_accept_per_step.png</code></span>
+              </div>
+              <h3>Acceptance rate is not the whole story</h3>
+              <p class="chart-subtitle">
+                Compare proposed support against accepted tokens per step
+              </p>
+              <figure class="chart-figure">
+                <img
+                  src="../figures/proposal_vs_accept_per_step.png"
+                  alt="Chart comparing average proposed tokens per step against average accepted tokens per step for speculative decoding methods."
+                />
+              </figure>
+              <p class="takeaway">
+                <strong>Takeaway:</strong> High acceptance rate does not
+                guarantee speed; suffix decoding can win even with lower raw
+                acceptance.
+              </p>
+            </article>
+
+            <article class="panel chart-card">
+              <div class="chart-meta">
+                <span class="chart-status">Placeholder</span>
+                <span class="chart-source">Reserve this slot for the meme figure</span>
+              </div>
+              <h3>Meme Figure</h3>
+              <p class="chart-subtitle">
+                Add the final joke/summary visual once the poster narrative is locked
+              </p>
+              <div class="meme-placeholder">
+                <div class="meme-frame">
+                  <span class="meme-sticker">Meme goes here</span>
+                </div>
+              </div>
+              <p class="takeaway">
+                <strong>Placeholder:</strong> Keep space for a closing visual
+                that reinforces the suffix-vs-draft-model punchline.
+              </p>
+            </article>
+          </div>
+        </section>
+      </article>
+    </main>
+
+    <script src="script.js"></script>
+  </body>
+</html>

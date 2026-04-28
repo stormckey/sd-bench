@@ -134,6 +134,92 @@ def load_alpaca_hf_prompts(
     return prompts
 
 
+def load_spider_hf_prompts(
+    dataset_name: str,
+    split: str = "validation",
+    limit: int | None = None,
+    streaming: bool = True,
+) -> list[dict[str, Any]]:
+    from datasets import load_dataset
+
+    prompts: list[dict[str, Any]] = []
+    dataset = load_dataset(dataset_name, split=split, streaming=streaming)
+
+    for row_index, record in enumerate(dataset, start=1):
+        prompt = _spider_prompt_for_generation(record)
+        if prompt is None:
+            continue
+
+        prompt_id = (
+            record.get("db_id")
+            or record.get("id")
+            or f"spider-{row_index}"
+        )
+        prompts.append({"id": str(prompt_id), "prompt": prompt})
+        if limit is not None and len(prompts) >= limit:
+            break
+
+    if not prompts:
+        raise ValueError(
+            f"No prompts loaded from dataset={dataset_name!r}, split={split!r}"
+        )
+    return prompts
+
+
+def load_swebench_hf_prompts(
+    dataset_name: str,
+    split: str = "test",
+    limit: int | None = None,
+    streaming: bool = True,
+) -> list[dict[str, Any]]:
+    from datasets import load_dataset
+
+    prompts: list[dict[str, Any]] = []
+    dataset = load_dataset(dataset_name, split=split, streaming=streaming)
+
+    for row_index, record in enumerate(dataset, start=1):
+        problem = record.get("problem_statement")
+        if not isinstance(problem, str) or not problem.strip():
+            continue
+        prompt_id = record.get("instance_id") or f"swebench-{row_index}"
+        prompts.append({"id": str(prompt_id), "prompt": problem.strip()})
+        if limit is not None and len(prompts) >= limit:
+            break
+
+    if not prompts:
+        raise ValueError(
+            f"No prompts loaded from dataset={dataset_name!r}, split={split!r}"
+        )
+    return prompts
+
+
+def load_terminalbench_hf_prompts(
+    dataset_name: str,
+    split: str = "test",
+    limit: int | None = None,
+    streaming: bool = True,
+) -> list[dict[str, Any]]:
+    from datasets import load_dataset
+
+    prompts: list[dict[str, Any]] = []
+    dataset = load_dataset(dataset_name, split=split, streaming=streaming)
+
+    for row_index, record in enumerate(dataset, start=1):
+        description = record.get("base_description")
+        if not isinstance(description, str) or not description.strip():
+            continue
+        prompt_id = record.get("task_id") or f"terminalbench-{row_index}"
+        prompts.append({"id": str(prompt_id), "prompt": description.strip()})
+        if limit is not None and len(prompts) >= limit:
+            break
+
+    if not prompts:
+        raise ValueError(
+            f"No prompts loaded from dataset={dataset_name!r}, split={split!r}"
+        )
+    return prompts
+
+
 def load_xsum_hf_prompts(
     dataset_name: str,
     split: str = "test",
@@ -285,6 +371,31 @@ def _alpaca_messages_for_generation(
             content = f"{content}\n\nInput:\n{normalized_input}"
 
     return [{"role": "user", "content": content}]
+
+
+def _spider_prompt_for_generation(record: dict[str, Any]) -> str | None:
+    instruction = record.get("input")
+    if isinstance(instruction, str) and instruction.strip():
+        return instruction.strip()
+
+    question = record.get("question")
+    schema = (
+        record.get("schema")
+        or record.get("serialized_schema")
+        or record.get("context")
+    )
+    if not isinstance(question, str) or not question.strip():
+        return None
+    if not isinstance(schema, str) or not schema.strip():
+        return None
+
+    return (
+        "You are given a database schema and a natural-language question. "
+        "Write a SQL query that answers the question. Return only the SQL query.\n\n"
+        f"Schema:\n{schema.strip()}\n\n"
+        f"Question:\n{question.strip()}\n\n"
+        "SQL:"
+    )
 
 
 def _language_display_name(code: str) -> str:
