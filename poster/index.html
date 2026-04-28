@@ -230,80 +230,24 @@
 
             <article class="panel chart-card">
               <div class="chart-meta">
-                <span class="chart-status">Final Figure</span>
-                <span class="chart-source"><code>figures/tokps_vs_peak_mem.png</code></span>
+                <span class="chart-status">Placeholder</span>
+                <span class="chart-source">Reserve this slot for the meme figure</span>
               </div>
-              <h3>Throughput vs. peak GPU memory</h3>
+              <h3>Meme Figure</h3>
               <p class="chart-subtitle">
-                Memory stays near vanilla and prompt lookup while throughput
-                climbs
+                Add the final joke/summary visual once the poster narrative is locked
               </p>
-              <figure class="chart-figure">
-                <img
-                  src="../figures/tokps_vs_peak_mem.png"
-                  alt="Scatter plot relating throughput to peak GPU memory for vanilla, prompt lookup, suffix speculation, and draft-model speculation."
-                />
-              </figure>
+              <div class="meme-placeholder">
+                <div class="meme-frame">
+                  <span class="meme-sticker">Meme goes here</span>
+                </div>
+              </div>
               <p class="takeaway">
-                <strong>Takeaway:</strong> Suffix decoding stays close to
-                vanilla and prompt lookup on memory, unlike draft-model
-                speculation.
+                <strong>Placeholder:</strong> Keep space for a closing visual
+                that reinforces the suffix-vs-draft-model punchline.
               </p>
             </article>
           </div>
-        </section>
-
-        <section class="closing-row band">
-          <section class="panel conclusion-panel">
-            <div class="panel-header">
-              <div>
-                <p class="card-kicker">Conclusion</p>
-                <h2>What the poster should leave people with</h2>
-              </div>
-            </div>
-            <ul class="conclusion-list">
-              <li>Suffix speculative decoding consistently outperforms vanilla decoding.</li>
-              <li>It often outperforms prompt lookup while avoiding a separate draft model.</li>
-              <li>Cheap proposals matter more than raw acceptance rate for end-to-end serving speed.</li>
-            </ul>
-          </section>
-
-          <section class="panel future-panel">
-            <div class="panel-header">
-              <div>
-                <p class="card-kicker">Future Work</p>
-                <h2>Tree-Based Attention / Verification (WIP)</h2>
-              </div>
-              <span class="wip-pill">WIP</span>
-            </div>
-
-            <div class="future-placeholder">
-              <div class="future-frame">
-                <div class="future-root">Current prefix</div>
-                <div class="future-branches">
-                  <span></span>
-                  <span></span>
-                  <span></span>
-                </div>
-                <div class="future-leaves">
-                  <span></span>
-                  <span></span>
-                  <span></span>
-                  <span></span>
-                </div>
-              </div>
-              <div class="future-copy">
-                <p>
-                  Reserve this panel for a branch-verification diagram once the
-                  implementation stabilizes.
-                </p>
-                <ul class="future-list">
-                  <li>Verify multiple candidate branches in one target-model pass.</li>
-                  <li>Reuse the same assisted-generation boundary as the suffix path.</li>
-                </ul>
-              </div>
-            </div>
-          </section>
         </section>
       </article>
     </main>
