@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Suffix Speculative Decoding</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="page">
+      <article class="method-panel theme-green method-panel-focus">
+        <div class="focus-star">★</div>
+        <header class="method-header">
+          <div class="method-index">4</div>
+          <div>
+            <h2>Suffix Speculative Decoding (Our Focus)</h2>
+            <p>Reuse repeated substrings via suffix matches <span class="accent-green">(no extra model)</span></p>
+          </div>
+        </header>
+
+        <div class="panel-body">
+
+          <!-- Section 1 -->
+          <section class="panel-section">
+            <div class="section-heading">
+              <span class="section-badge">1</span>
+              <h3>Input Prompt / Context</h3>
+            </div>
+            <div class="token-row token-row-nowrap token-row-prompt">
+              <span class="token-chip token-prompt">Translate</span>
+              <span class="token-chip token-prompt">the</span>
+              <span class="token-chip token-prompt">function</span>
+              <span class="token-chip token-prompt">f(x)</span>
+              <span class="token-chip token-prompt">=</span>
+              <span class="token-chip token-prompt-hl">sin</span>
+              <span class="token-chip token-prompt-hl">(</span>
+              <span class="token-chip token-prompt-hl">x</span>
+              <span class="token-chip token-prompt-hl">)</span>
+              <span class="token-chip token-prompt">…</span>
+              <span class="token-chip token-prompt">\n</span>
+            </div>
+          </section>
+
+          <!-- Section 2: SVG speculation tree -->
+          <section class="panel-section grow">
+            <div class="section-heading">
+              <span class="section-badge">2</span>
+              <h3>Candidate Proposal via Suffix Tree</h3>
+            </div>
+
+            <!-- Several candidate trees found from repeated suffix matches -->
+            <svg class="spec-tree-svg"
+                 viewBox="0 0 300 172"
+                 xmlns="http://www.w3.org/2000/svg"
+                 width="100%"
+                 aria-label="Several candidate trees showing different suffix-based continuations">
+              <!-- Candidate A -->
+              <circle cx="42" cy="28" r="7" fill="#e8eaf0" stroke="#8a9ab5" stroke-width="1.4"/>
+              <line x1="42" y1="35" x2="42" y2="45" stroke="#71a879" stroke-width="1.8"/>
+              <line x1="42" y1="45" x2="24" y2="56" stroke="#71a879" stroke-width="1.8"/>
+              <line x1="42" y1="45" x2="42" y2="56" stroke="#71a879" stroke-width="1.8"/>
+              <line x1="42" y1="45" x2="60" y2="56" stroke="#71a879" stroke-width="1.8"/>
+              <circle cx="24" cy="63" r="8" fill="#f4fbf4" stroke="#71a879" stroke-width="1.4"/>
+              <text x="24" y="66" text-anchor="middle" font-size="6.3" font-weight="700" fill="#355b38">is</text>
+              <circle cx="42" cy="63" r="8" fill="#f4fbf4" stroke="#71a879" stroke-width="1.4"/>
+              <text x="42" y="66" text-anchor="middle" font-size="5.8" font-weight="700" fill="#355b38">repr.</text>
+              <circle cx="60" cy="63" r="8" fill="#f4fbf4" stroke="#71a879" stroke-width="1.4"/>
+              <text x="60" y="66" text-anchor="middle" font-size="5.8" font-weight="700" fill="#355b38">used</text>
+              <line x1="24" y1="71" x2="24" y2="82" stroke="#71a879" stroke-width="1.8"/>
+              <circle cx="24" cy="89" r="8" fill="#f4fbf4" stroke="#71a879" stroke-width="1.4"/>
+              <text x="24" y="92" text-anchor="middle" font-size="6.3" font-weight="700" fill="#355b38">a</text>
+              <line x1="24" y1="97" x2="24" y2="108" stroke="#71a879" stroke-width="1.8"/>
+              <circle cx="24" cy="115" r="8" fill="#f4fbf4" stroke="#71a879" stroke-width="1.4"/>
+              <text x="24" y="118" text-anchor="middle" font-size="5.8" font-weight="700" fill="#355b38">math.</text>
+
+              <!-- Candidate B -->
+              <circle cx="42" cy="122" r="7" fill="#e8eaf0" stroke="#8a9ab5" stroke-width="1.4"/>
+              <line x1="42" y1="129" x2="42" y2="139" stroke="#71a879" stroke-width="1.8"/>
+              <line x1="42" y1="139" x2="24" y2="150" stroke="#71a879" stroke-width="1.8"/>
+              <line x1="42" y1="139" x2="42" y2="150" stroke="#71a879" stroke-width="1.8"/>
+              <line x1="42" y1="139" x2="60" y2="150" stroke="#71a879" stroke-width="1.8"/>
+              <circle cx="24" cy="157" r="8" fill="#f4fbf4" stroke="#71a879" stroke-width="1.4"/>
+              <text x="24" y="160" text-anchor="middle" font-size="6.3" font-weight="700" fill="#355b38">is</text>
+              <circle cx="42" cy="157" r="8" fill="#f4fbf4" stroke="#71a879" stroke-width="1.4"/>
+              <text x="42" y="160" text-anchor="middle" font-size="5.8" font-weight="700" fill="#355b38">maps</text>
+              <circle cx="60" cy="157" r="8" fill="#f4fbf4" stroke="#71a879" stroke-width="1.4"/>
+              <text x="60" y="160" text-anchor="middle" font-size="5.8" font-weight="700" fill="#355b38">takes</text>
+
+              <!-- Candidate C -->
+              <circle cx="102" cy="75" r="7" fill="#e8eaf0" stroke="#8a9ab5" stroke-width="1.4"/>
+              <line x1="102" y1="82" x2="102" y2="92" stroke="#71a879" stroke-width="1.8"/>
+              <line x1="102" y1="92" x2="84" y2="103" stroke="#71a879" stroke-width="1.8"/>
+              <line x1="102" y1="92" x2="102" y2="103" stroke="#71a879" stroke-width="1.8"/>
+              <line x1="102" y1="92" x2="120" y2="103" stroke="#71a879" stroke-width="1.8"/>
+              <circle cx="84" cy="110" r="8" fill="#f4fbf4" stroke="#71a879" stroke-width="1.4"/>
+              <text x="84" y="113" text-anchor="middle" font-size="6.3" font-weight="700" fill="#355b38">is</text>
+              <circle cx="102" cy="110" r="8" fill="#f4fbf4" stroke="#71a879" stroke-width="1.4"/>
+              <text x="102" y="113" text-anchor="middle" font-size="6.3" font-weight="700" fill="#355b38">a</text>
+              <circle cx="120" cy="110" r="8" fill="#f4fbf4" stroke="#71a879" stroke-width="1.4"/>
+              <text x="120" y="113" text-anchor="middle" font-size="6.3" font-weight="700" fill="#355b38">for</text>
+              <line x1="102" y1="118" x2="102" y2="129" stroke="#71a879" stroke-width="1.8"/>
+              <circle cx="102" cy="136" r="8" fill="#f4fbf4" stroke="#71a879" stroke-width="1.4"/>
+              <text x="102" y="139" text-anchor="middle" font-size="5.8" font-weight="700" fill="#355b38">math.</text>
+
+              <!-- Score arrow -->
+              <text x="173" y="84" text-anchor="middle" font-size="9" font-weight="800" fill="#237a3c">score</text>
+              <line x1="132" y1="88" x2="220" y2="88" stroke="#237a3c" stroke-width="2.4"/>
+              <path d="M214 82l10 6-10 6" fill="#237a3c"/>
+
+              <!-- Selected proposal -->
+              <circle cx="254" cy="28" r="7" fill="#e8eaf0" stroke="#8a9ab5" stroke-width="1.4"/>
+              <line x1="254" y1="35" x2="254" y2="45" stroke="#d2a23a" stroke-width="1.8"/>
+              <line x1="254" y1="45" x2="236" y2="56" stroke="#d2a23a" stroke-width="1.8"/>
+              <line x1="254" y1="45" x2="254" y2="56" stroke="#71a879" stroke-width="1.8"/>
+              <line x1="254" y1="45" x2="272" y2="56" stroke="#71a879" stroke-width="1.8"/>
+              <circle cx="236" cy="63" r="8" fill="#fff1bf" stroke="#d2a23a" stroke-width="1.4"/>
+              <text x="236" y="66" text-anchor="middle" font-size="6.3" font-weight="700" fill="#6f5318">is</text>
+              <circle cx="254" cy="63" r="8" fill="#f4fbf4" stroke="#71a879" stroke-width="1.4"/>
+              <text x="254" y="66" text-anchor="middle" font-size="5.8" font-weight="700" fill="#355b38">repr.</text>
+              <circle cx="272" cy="63" r="8" fill="#f4fbf4" stroke="#71a879" stroke-width="1.4"/>
+              <text x="272" y="66" text-anchor="middle" font-size="5.8" font-weight="700" fill="#355b38">used</text>
+              <line x1="236" y1="71" x2="236" y2="82" stroke="#d2a23a" stroke-width="1.8"/>
+              <circle cx="236" cy="89" r="8" fill="#fff1bf" stroke="#d2a23a" stroke-width="1.4"/>
+              <text x="236" y="92" text-anchor="middle" font-size="6.3" font-weight="700" fill="#6f5318">a</text>
+              <line x1="236" y1="97" x2="236" y2="108" stroke="#d2a23a" stroke-width="1.8"/>
+              <circle cx="236" cy="115" r="8" fill="#fff1bf" stroke="#d2a23a" stroke-width="1.4"/>
+              <text x="236" y="118" text-anchor="middle" font-size="5.8" font-weight="700" fill="#6f5318">math.</text>
+            </svg>
+          </section>
+
+          <!-- Section 3 -->
+          <section class="panel-section">
+            <div class="section-heading">
+              <span class="section-badge">3</span>
+              <h3>Verification by target model</h3>
+            </div>
+            <div class="model-card theme-soft-blue">
+              <div class="model-visual">
+                <svg class="icon icon-llm" viewBox="0 0 32 32" aria-hidden="true">
+                  <circle cx="8" cy="8" r="2.3"></circle>
+                  <circle cx="22" cy="8" r="2.3"></circle>
+                  <circle cx="15" cy="18" r="2.3"></circle>
+                  <circle cx="4" cy="18" r="2.3"></circle>
+                  <circle cx="26" cy="18" r="2.3"></circle>
+                  <circle cx="8" cy="28" r="2.3"></circle>
+                  <circle cx="22" cy="28" r="2.3"></circle>
+                  <path d="M8 8h14M8 8l-4 10m18-10l4 10M4 18h22M4 18l4 10m18-10l-4 10M8 28h14M8 8l7 10m7-10l-7 10m0 0l-7 10m7-10l7 10"></path>
+                </svg>
+              </div>
+              <div class="model-copy">
+                <h4>Target LLM <span>(Large Model)</span></h4>
+              </div>
+              <div class="cache-block">
+                <svg class="icon icon-cache" viewBox="0 0 24 24" aria-hidden="true">
+                  <ellipse cx="12" cy="5" rx="8" ry="3"></ellipse>
+                  <path d="M4 5v13c0 1.7 3.6 3 8 3s8-1.3 8-3V5"></path>
+                  <path d="M4 11c0 1.7 3.6 3 8 3s8-1.3 8-3"></path>
+                  <path d="M4 17c0 1.7 3.6 3 8 3s8-1.3 8-3"></path>
+                </svg>
+                <span>KV Cache</span>
+              </div>
+            </div>
+            <div class="accepted-rejected-row compact-top">
+              <div class="verification-segment">
+                <div class="token-row token-row-nowrap token-row-accepted">
+                  <span class="token-chip token-accepted">is</span>
+                  <span class="token-chip token-accepted">a</span>
+                  <span class="token-chip token-accepted">mathematical</span>
+                  <span class="token-chip token-accepted">function</span>
+                </div>
+                <span class="segment-label accept-label">Accepted</span>
+              </div>
+              <div class="verification-segment">
+                <div class="token-row token-row-nowrap token-row-rejected">
+                  <span class="token-chip token-rejected">used</span>
+                  <span class="token-chip token-rejected">in</span>
+                </div>
+                <span class="segment-label reject-label">Rejected</span>
+              </div>
+            </div>
+          </section>
+
+          <!-- Section 4 -->
+          <section class="panel-section">
+            <div class="section-heading">
+              <span class="section-badge">4</span>
+              <h3>Continue generation from last accepted token</h3>
+            </div>
+            <div class="row-between">
+              <div class="token-row token-row-nowrap token-row-output">
+                <span class="token-chip token-prompt">sin(x)</span>
+                <span class="token-chip token-accepted">is</span>
+                <span class="token-chip token-accepted">a</span>
+                <span class="token-chip token-accepted">mathematical</span>
+                <span class="token-chip token-accepted">function</span>
+                <span class="token-chip token-prompt">.</span>
+                <span class="token-chip token-prompt">\n</span>
+              </div>
+              <svg class="icon icon-check theme-icon-green" viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="12" cy="12" r="9"></circle>
+                <path d="M8 12.5l2.5 2.5L16.5 9"></path>
+              </svg>
+            </div>
+          </section>
+
+        </div>
+
+        <footer class="panel-footer panel-footer-green">
+          <div class="footer-line">
+            <svg class="icon icon-clock" viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="12" r="9"></circle>
+              <path d="M12 7v5l3 2"></path>
+            </svg>
+            <p><strong>Pros:</strong> No auxiliary model, reuses context repetition, cache-friendly. Strong on repetitive workloads</p>
+          </div>
+          <div class="footer-line">
+            <svg class="icon icon-gauge" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M4 16a8 8 0 1 1 16 0"></path>
+              <path d="M12 16l4-6"></path>
+            </svg>
+            <p><strong>Cons:</strong> Verification overhead, effectiveness depends on repetitions</p>
+          </div>
+          <p class="footer-best"><strong>Best for:</strong> Repetitive / templated content, code, docs, logs, SQL</p>
+        </footer>
+      </article>
+    </main>
+  </body>
+</html>
