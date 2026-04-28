@@ -7,7 +7,8 @@ Supported methods:
 - `autoregressive`
 - `draft_speculative`
 - `prompt_lookup`
-- `suffix`
+- `suffix_speculative`
+- `tree_speculative`
 
 The benchmark runner executes on Modal GPUs, reads prompts from Hugging Face datasets or local JSONL, and writes `raw.jsonl` plus `summary.json` for each run.
 
@@ -20,7 +21,7 @@ Current test checkout:
 ```bash
 git clone https://github.com/ErwinZhou/transformers.git transformers
 cd transformers
-git checkout suffix-feat
+git checkout tree-spec-decoding
 cd ..
 ```
 
@@ -104,8 +105,9 @@ Fields you will usually care about:
 Useful rules:
 
 - `draft_speculative` requires `draft_model`
+- `tree_speculative` does not use `draft_model`; it uses a suffix-tree cache instead
 - `translation_hf` requires source and target languages
-- keep `batch_size=1` for `draft_speculative`
+- keep `batch_size=1` for `draft_speculative` and `tree_speculative`
 
 ## Results
 
@@ -133,5 +135,6 @@ The main metric to compare is `overall_tokens_per_second`.
 
 - Benchmark workers install the vendored local checkout at `./transformers`, not PyPI.
 - The current test checkout tracks `https://github.com/ErwinZhou/transformers.git` on branch `suffix-feat` at commit `76d60fa5751e4d66423523b9d78680743ff666fd`.
+- Tree-spec benchmarking requires the local `./transformers` checkout on branch `tree-spec-decoding`.
 - Prompt lookup currently shows the clearest speedup on the retained benchmark sets
 - Draft-model speculation is supported, but may be slower than vanilla for some model pairs

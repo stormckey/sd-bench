@@ -239,6 +239,38 @@ PYTHONPATH=src python -m bench.cli compare swebench --limit 10
 | prompt-lookup | 1.24× |
 | suffix_speculative | 2.47× |
 
+---
+
+## Tree-Spec Benchmark Sweep
+
+### Experiment Setup
+
+- **Date:** `2026-04-28`
+- **Method:** `tree-spec [local+global]`
+- **Model:** `Qwen/Qwen3-8B`
+- **GPU:** `L40S`
+- **Prompts per config:** `50`
+- **Branch factor:** `2`
+
+### Results
+
+| Workload | Tokens | Tok/s | Latency (s) | Peak Mem (MB) | Draft Acc | Steps | Prop/Step | Acc/Step | AccFrac | E2E Tok/s | Wall Time (s) |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| WMT14 | 51,200 | 67.0 | 764.48 | 15,889 | 18.7% | 17,862 | 9.8 | 1.8 | 63.8% | 64.8 | 790.0 |
+| WildChat translate | 38,070 | 63.9 | 596.11 | 15,834 | 17.8% | 13,644 | 9.8 | 1.7 | 62.5% | 54.2 | 702.0 |
+| WildChat code | 51,200 | 62.8 | 815.19 | 15,845 | 18.5% | 17,964 | 9.8 | 1.8 | 63.5% | 59.7 | 858.0 |
+| SWE-bench | 102,400 | 155.5 | 658.36 | 17,477 | 71.5% | 12,738 | 9.8 | 7.0 | 87.2% | 147.9 | 692.3 |
+| Spider | 25,600 | 64.3 | 398.37 | 15,952 | 12.7% | 11,355 | 9.6 | 1.2 | 53.8% | 58.0 | 441.7 |
+| TerminalBench | 51,200 | 59.2 | 865.39 | 17,383 | 16.0% | 19,790 | 9.9 | 1.6 | 60.8% | 57.9 | 885.0 |
+
+### Summary
+
+- At `limit: 50`, tree-spec no longer shows the very high throughput from the earlier short smoke runs on most workloads. **SWE-bench** is now the clear best case at **155.5 tok/s**, while the other five workloads cluster much lower around **59.2 to 67.0 tok/s**.
+- **SWE-bench** is also the only workload with genuinely strong speculative efficiency in the longer runs, reaching **71.5% draft acceptance**, **7.0 accepted tokens per step**, and **87.2% accepted-token fraction**.
+- The other workloads all settle into a similar low-acceptance regime: roughly **12.7% to 18.7% draft acceptance**, about **1.2 to 1.8 accepted tokens per step**, and only **53.8% to 63.8% accepted-token fraction**.
+- **Spider** remains the weakest case by acceptance quality at **12.7% draft acceptance** and **1.2 accepted tokens per step**, though its raw throughput (**64.3 tok/s**) ends up similar to WMT14 and WildChat once the prompt count is larger.
+- Peak memory stays near **15.8 GB** for WMT14, WildChat translate, WildChat code, and Spider, but rises substantially for **SWE-bench** (**17.5 GB**) and **TerminalBench** (**17.4 GB**) in the longer runs.
+
 ### Summary
 
 - **suffix_speculative** achieved the best overall performance at **92.0 tok/s**, delivering a **2.47× speedup** over vanilla.

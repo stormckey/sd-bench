@@ -119,6 +119,7 @@ def _short_method(method: str) -> str:
         "autoregressive": "vanilla",
         "draft_speculative": "draft-spec",
         "prompt_lookup": "prompt-lookup",
+        "tree_speculative": "tree-spec",
     }.get(method, method)
 
 
@@ -139,6 +140,17 @@ def _method_label(config: dict) -> str:
             "local_and_global": " [local+global]",
         }.get(source_mode, f" [{source_mode}]")
         method += suffix_mode_label
+
+    if config.get("method") == "tree_speculative":
+        source_mode = (
+            config.get("method_options", {}) or {}
+        ).get("tree_spec_decoding_source_mode", "local_and_global")
+        tree_mode_label = {
+            "local_only": " [local]",
+            "global_only": " [global]",
+            "local_and_global": " [local+global]",
+        }.get(source_mode, f" [{source_mode}]")
+        method += tree_mode_label
 
     return method
 
