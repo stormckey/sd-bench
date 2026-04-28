@@ -10,7 +10,6 @@
     <main class="page">
       <article class="method-panel theme-orange">
         <header class="method-header">
-          <div class="method-index">3</div>
           <div>
             <h2>Prompt Lookup Decoding</h2>
             <p>Retrieve next tokens from repeated n-grams in prompt</p>
@@ -24,17 +23,12 @@
               <h3>Input Prompt / Context</h3>
             </div>
             <div class="token-row token-row-nowrap token-row-prompt">
-              <span class="token-chip token-prompt">Translate</span>
+              <span class="token-chip token-prompt">Where</span>
+              <span class="token-chip token-prompt">is</span>
               <span class="token-chip token-prompt">the</span>
-              <span class="token-chip token-prompt">function</span>
-              <span class="token-chip token-prompt">f(x)</span>
-              <span class="token-chip token-prompt">=</span>
-              <span class="token-chip token-prompt">sin</span>
-              <span class="token-chip token-prompt">(</span>
-              <span class="token-chip token-prompt">x</span>
-              <span class="token-chip token-prompt">)</span>
-              <span class="token-chip token-prompt">…</span>
-              <span class="token-chip token-prompt">\n</span>
+              <span class="token-chip token-prompt">capital</span>
+              <span class="token-chip token-prompt">of</span>
+              <span class="token-chip token-prompt">China?</span>
             </div>
           </section>
 
@@ -53,20 +47,20 @@
                 <p>n-gram index<br />(built from prompt)</p>
               </div>
               <div class="lookup-matches">
-                <p class="small-heading">Matches for prefix "... = sin ( x )"</p>
-                <div class="match-card">... sin ( x ) is a mathematical function . \n</div>
-                <div class="match-card">... sin ( x ) represents the sine function .</div>
-                <div class="match-card">... sin ( x ) can be written as ... \n</div>
+                <p class="small-heading">Matches for prefix "... capital of China?"</p>
+                <div class="match-card">... China? The capital of China is Beijing.</div>
+                <div class="match-card">... China? The capital of China remains Beijing.</div>
+                <div class="match-card">... China? The capital of China, Beijing, is ...</div>
               </div>
             </div>
             <div class="flow-arrow theme-stroke-orange"></div>
             <p class="inline-caption theme-copy-orange">Candidate next tokens (from matches)</p>
-            <div class="token-row token-row-wrap-ok token-row-candidates">
+            <div class="token-row token-row-nowrap token-row-candidates">
+              <span class="token-chip token-candidate">The</span>
+              <span class="token-chip token-candidate">capital</span>
+              <span class="token-chip token-candidate">of</span>
+              <span class="token-chip token-candidate">Japan</span>
               <span class="token-chip token-candidate">is</span>
-              <span class="token-chip token-candidate">represents</span>
-              <span class="token-chip token-candidate">can</span>
-              <span class="token-chip token-candidate">which</span>
-              <span class="token-chip token-candidate">…</span>
             </div>
           </section>
 
@@ -104,17 +98,16 @@
             <div class="accepted-rejected-row compact-top">
               <div class="verification-segment">
                 <div class="token-row token-row-nowrap token-row-accepted">
-                  <span class="token-chip token-accepted">is</span>
-                  <span class="token-chip token-accepted">a</span>
-                  <span class="token-chip token-accepted">mathematical</span>
-                  <span class="token-chip token-accepted">function</span>
+                  <span class="token-chip token-accepted">The</span>
+                  <span class="token-chip token-accepted">capital</span>
+                  <span class="token-chip token-accepted">of</span>
                 </div>
                 <span class="segment-label accept-label">Accepted</span>
               </div>
               <div class="verification-segment">
                 <div class="token-row token-row-nowrap token-row-rejected">
-                  <span class="token-chip token-rejected">used</span>
-                  <span class="token-chip token-rejected">in</span>
+                  <span class="token-chip token-rejected">Japan</span>
+                  <span class="token-chip token-rejected">is</span>
                 </div>
                 <span class="segment-label reject-label">Rejected</span>
               </div>
@@ -128,13 +121,16 @@
             </div>
             <div class="row-between">
               <div class="token-row token-row-nowrap token-row-output">
-                <span class="token-chip token-prompt">sin(x)</span>
-                <span class="token-chip token-accepted">is</span>
-                <span class="token-chip token-accepted">a</span>
-                <span class="token-chip token-accepted">mathematical</span>
-                <span class="token-chip token-accepted">function</span>
-                <span class="token-chip token-prompt">.</span>
-                <span class="token-chip token-prompt">\n</span>
+                <span class="token-chip token-prompt">Where</span>
+                <span class="token-chip token-prompt">is</span>
+                <span class="token-chip token-prompt">the</span>
+                <span class="token-chip token-prompt">capital</span>
+                <span class="token-chip token-prompt">of</span>
+                <span class="token-chip token-prompt">China?</span>
+                <span class="token-chip token-accepted">The</span>
+                <span class="token-chip token-accepted">capital</span>
+                <span class="token-chip token-accepted">of</span>
+                <span class="token-chip token-prompt">…</span>
               </div>
               <svg class="icon icon-check theme-icon-green" viewBox="0 0 24 24" aria-hidden="true">
                 <circle cx="12" cy="12" r="9"></circle>

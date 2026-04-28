@@ -10,7 +10,6 @@
     <main class="page">
       <article class="method-panel theme-purple">
         <header class="method-header">
-          <div class="method-index">2</div>
           <div>
             <h2>Draft-Model Speculative Decoding</h2>
             <p>Use a small draft model to propose multiple tokens</p>
@@ -24,17 +23,12 @@
               <h3>Input Prompt / Context</h3>
             </div>
             <div class="token-row token-row-nowrap token-row-prompt">
-              <span class="token-chip token-prompt">Translate</span>
+              <span class="token-chip token-prompt">Where</span>
+              <span class="token-chip token-prompt">is</span>
               <span class="token-chip token-prompt">the</span>
-              <span class="token-chip token-prompt">function</span>
-              <span class="token-chip token-prompt">f(x)</span>
-              <span class="token-chip token-prompt">=</span>
-              <span class="token-chip token-prompt">sin</span>
-              <span class="token-chip token-prompt">(</span>
-              <span class="token-chip token-prompt">x</span>
-              <span class="token-chip token-prompt">)</span>
-              <span class="token-chip token-prompt">…</span>
-              <span class="token-chip token-prompt">\n</span>
+              <span class="token-chip token-prompt">capital</span>
+              <span class="token-chip token-prompt">of</span>
+              <span class="token-chip token-prompt">China?</span>
             </div>
           </section>
 
@@ -59,14 +53,13 @@
             <div class="proposal-block">
               <div class="flow-arrow theme-stroke-purple short"></div>
               <div class="token-row token-row-nowrap token-row-candidates">
+                <span class="token-chip token-candidate">The</span>
+                <span class="token-chip token-candidate">capital</span>
+                <span class="token-chip token-candidate">of</span>
+                <span class="token-chip token-candidate">Japan</span>
                 <span class="token-chip token-candidate">is</span>
-                <span class="token-chip token-candidate">a</span>
-                <span class="token-chip token-candidate">mathematical</span>
-                <span class="token-chip token-candidate">function</span>
-                <span class="token-chip token-candidate">.</span>
-                <span class="token-chip token-candidate">\n</span>
               </div>
-              <p class="inline-caption theme-copy-purple">Candidate Proposal (k=6)</p>
+              <p class="inline-caption theme-copy-purple">Candidate Proposal (k=5)</p>
             </div>
           </div>
 
@@ -106,17 +99,16 @@
               <div class="accepted-rejected-row">
                 <div class="verification-segment">
                   <div class="token-row token-row-nowrap token-row-accepted">
-                    <span class="token-chip token-accepted">is</span>
-                    <span class="token-chip token-accepted">a</span>
-                    <span class="token-chip token-accepted">mathematical</span>
-                    <span class="token-chip token-accepted">function</span>
+                    <span class="token-chip token-accepted">The</span>
+                    <span class="token-chip token-accepted">capital</span>
+                    <span class="token-chip token-accepted">of</span>
                   </div>
                   <span class="segment-label accept-label">Accepted</span>
                 </div>
                 <div class="verification-segment">
                   <div class="token-row token-row-nowrap token-row-rejected">
-                    <span class="token-chip token-rejected">used</span>
-                    <span class="token-chip token-rejected">in</span>
+                    <span class="token-chip token-rejected">Japan</span>
+                    <span class="token-chip token-rejected">is</span>
                   </div>
                   <span class="segment-label reject-label">Rejected</span>
                 </div>
@@ -160,13 +152,16 @@
             </div>
             <div class="row-between">
               <div class="token-row token-row-nowrap token-row-output">
-                <span class="token-chip token-prompt">sin(x)</span>
-                <span class="token-chip token-accepted">is</span>
-                <span class="token-chip token-accepted">a</span>
-                <span class="token-chip token-accepted">mathematical</span>
-                <span class="token-chip token-accepted">function</span>
-                <span class="token-chip token-prompt">.</span>
-                <span class="token-chip token-prompt">\n</span>
+                <span class="token-chip token-prompt">Where</span>
+                <span class="token-chip token-prompt">is</span>
+                <span class="token-chip token-prompt">the</span>
+                <span class="token-chip token-prompt">capital</span>
+                <span class="token-chip token-prompt">of</span>
+                <span class="token-chip token-prompt">China?</span>
+                <span class="token-chip token-accepted">The</span>
+                <span class="token-chip token-accepted">capital</span>
+                <span class="token-chip token-accepted">of</span>
+                <span class="token-chip token-prompt">…</span>
               </div>
               <svg class="icon icon-check theme-icon-green" viewBox="0 0 24 24" aria-hidden="true">
                 <circle cx="12" cy="12" r="9"></circle>

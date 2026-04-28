@@ -66,8 +66,8 @@ body {
 /* ── Header ── */
 .method-header {
   display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 10px;
+  grid-template-columns: 1fr;
+  gap: 6px;
   align-items: start;
   margin-bottom: 12px;
 }
