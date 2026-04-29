@@ -430,6 +430,51 @@ PYTHONPATH=src python -m bench.cli compare wmt14 --limit 10
 
 ---
 
+## Tree-Spec Cache-Mode Comparison
+
+### Experiment Setup
+
+- **Date:** `2026-04-28`
+- **Method:** `tree-spec`
+- **Model:** `Qwen/Qwen3-8B`
+- **GPU:** `L40S`
+- **Sampling:** deterministic shuffled-prefix prompt selection
+- **Compared modes:** `local_and_global` vs `local_only`
+
+### Results
+
+#### `local_and_global`
+
+| Workload | Tok/s @10 | Draft Acc @10 | Tok/s @50 | Draft Acc @50 |
+|---|---:|---:|---:|---:|
+| WMT14 | 202.73 | 59.46% | 74.09 | 27.64% |
+| WildChat translate | 79.35 | 17.60% | 89.53 | 21.63% |
+| WildChat code | 160.04 | 49.59% | 94.18 | 24.36% |
+| SWE-bench | 250.73 | 93.40% | 118.31 | 46.90% |
+| Spider | 110.30 | 30.60% | 112.56 | 31.21% |
+| TerminalBench | 258.42 | 84.55% | 157.59 | 53.80% |
+
+#### `local_only`
+
+| Workload | Tok/s @10 | Draft Acc @10 | Tok/s @50 | Draft Acc @50 |
+|---|---:|---:|---:|---:|
+| WMT14 | 161.45 | 65.52% | 167.34 | 66.31% |
+| WildChat translate | 134.67 | 55.76% | 199.36 | 72.55% |
+| WildChat code | 192.99 | 75.72% | 179.71 | 64.41% |
+| SWE-bench | 219.12 | 84.32% | 166.61 | 73.09% |
+| Spider | 93.92 | 38.33% | 81.53 | 34.58% |
+| TerminalBench | 105.58 | 59.00% | 111.32 | 55.70% |
+
+### Summary
+
+- The large acceptance collapse is concentrated in `local_and_global`. As prompt count grows from `10` to `50`, **WMT14**, **WildChat code**, **SWE-bench**, and **TerminalBench** all lose substantial draft acceptance and throughput.
+- `local_only` is much more stable. **WMT14** and **WildChat translate** both improve at `limit: 50`, while **WildChat code** and **SWE-bench** degrade more moderately than they do under `local_and_global`.
+- **WildChat translate** is the clearest win for `local_only`, jumping from **134.67 tok/s / 55.76%** at `10` prompts to **199.36 tok/s / 72.55%** at `50` prompts.
+- **Spider** remains comparatively weak in both modes, and `local_only` does not fully remove the larger-sample degradation there.
+- The evidence points to the global cache as the main source of the severe degradation seen in the earlier tree-spec sweep, though dataset/task effects still matter for some workloads.
+
+---
+
 ## WildChat Translate Suffix Matching Ablation
 
 **Command**

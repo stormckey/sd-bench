@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import random
 from pathlib import Path
 from typing import Any
 
@@ -8,6 +9,7 @@ from typing import Any
 def load_jsonl_prompts(
     path: str | Path,
     limit: int | None = None,
+    seed: int = 1234,
 ) -> list[dict[str, Any]]:
     prompts: list[dict[str, Any]] = []
     with Path(path).open("r", encoding="utf-8") as handle:
@@ -25,8 +27,7 @@ def load_jsonl_prompts(
                 prompts.append({"id": str(prompt_id), "messages": messages})
             else:
                 raise ValueError(f"Invalid prompt record at line {line_number} in {path}")
-            if limit is not None and len(prompts) >= limit:
-                break
+    prompts = _sample_records(prompts, limit=limit, seed=seed)
     if not prompts:
         raise ValueError(f"No prompts loaded from {path}")
     return prompts
@@ -49,6 +50,7 @@ def load_wildchat_hf_prompts(
     dataset_name: str,
     split: str = "train",
     limit: int | None = None,
+    seed: int = 1234,
     language: str | None = "English",
     streaming: bool = True,
     max_messages: int | None = None,
@@ -57,34 +59,23 @@ def load_wildchat_hf_prompts(
     include_keywords: list[str] | None = None,
     exclude_keywords: list[str] | None = None,
 ) -> list[dict[str, Any]]:
-    from datasets import load_dataset
-
-    prompts: list[dict[str, Any]] = []
-    dataset = load_dataset(dataset_name, split=split, streaming=streaming)
-
-    for row_index, record in enumerate(dataset, start=1):
-        if language is not None and record.get("language") != language:
-            continue
-        if record.get("redacted") is True:
-            continue
-
-        messages = _wildchat_messages_for_generation(record)
-        if messages is None:
-            continue
-        if not _wildchat_matches_filters(
-            messages,
+    prompts = _reservoir_sample_filtered_dataset(
+        dataset_name=dataset_name,
+        split=split,
+        streaming=streaming,
+        limit=limit,
+        seed=seed,
+        row_builder=lambda record, row_index: _wildchat_prompt_record(
+            record,
+            row_index=row_index,
+            language=language,
             max_messages=max_messages,
             min_user_chars=min_user_chars,
             max_user_chars=max_user_chars,
             include_keywords=include_keywords,
             exclude_keywords=exclude_keywords,
-        ):
-            continue
-
-        prompt_id = record.get("conversation_id") or f"wildchat-{row_index}"
-        prompts.append({"id": str(prompt_id), "messages": messages})
-        if limit is not None and len(prompts) >= limit:
-            break
+        ),
+    )
 
     if not prompts:
         raise ValueError(
@@ -97,6 +88,7 @@ def load_alpaca_hf_prompts(
     dataset_name: str,
     split: str = "train",
     limit: int | None = None,
+    seed: int = 1234,
     streaming: bool = True,
     min_user_chars: int | None = None,
     max_user_chars: int | None = None,
@@ -105,27 +97,21 @@ def load_alpaca_hf_prompts(
 ) -> list[dict[str, Any]]:
     from datasets import load_dataset
 
-    prompts: list[dict[str, Any]] = []
-    dataset = load_dataset(dataset_name, split=split, streaming=streaming)
-
-    for row_index, record in enumerate(dataset, start=1):
-        messages = _alpaca_messages_for_generation(record)
-        if messages is None:
-            continue
-        if not _wildchat_matches_filters(
-            messages,
-            max_messages=1,
+    prompts = _reservoir_sample_filtered_dataset(
+        dataset_name=dataset_name,
+        split=split,
+        streaming=streaming,
+        limit=limit,
+        seed=seed,
+        row_builder=lambda record, row_index: _alpaca_prompt_record(
+            record,
+            row_index=row_index,
             min_user_chars=min_user_chars,
             max_user_chars=max_user_chars,
             include_keywords=include_keywords,
             exclude_keywords=exclude_keywords,
-        ):
-            continue
-
-        prompt_id = record.get("instruction") or f"alpaca-{row_index}"
-        prompts.append({"id": str(prompt_id), "messages": messages})
-        if limit is not None and len(prompts) >= limit:
-            break
+        ),
+    )
 
     if not prompts:
         raise ValueError(
@@ -138,26 +124,17 @@ def load_spider_hf_prompts(
     dataset_name: str,
     split: str = "validation",
     limit: int | None = None,
+    seed: int = 1234,
     streaming: bool = True,
 ) -> list[dict[str, Any]]:
-    from datasets import load_dataset
-
-    prompts: list[dict[str, Any]] = []
-    dataset = load_dataset(dataset_name, split=split, streaming=streaming)
-
-    for row_index, record in enumerate(dataset, start=1):
-        prompt = _spider_prompt_for_generation(record)
-        if prompt is None:
-            continue
-
-        prompt_id = (
-            record.get("db_id")
-            or record.get("id")
-            or f"spider-{row_index}"
-        )
-        prompts.append({"id": str(prompt_id), "prompt": prompt})
-        if limit is not None and len(prompts) >= limit:
-            break
+    prompts = _reservoir_sample_filtered_dataset(
+        dataset_name=dataset_name,
+        split=split,
+        streaming=streaming,
+        limit=limit,
+        seed=seed,
+        row_builder=lambda record, row_index: _spider_prompt_record(record, row_index),
+    )
 
     if not prompts:
         raise ValueError(
@@ -170,21 +147,17 @@ def load_swebench_hf_prompts(
     dataset_name: str,
     split: str = "test",
     limit: int | None = None,
+    seed: int = 1234,
     streaming: bool = True,
 ) -> list[dict[str, Any]]:
-    from datasets import load_dataset
-
-    prompts: list[dict[str, Any]] = []
-    dataset = load_dataset(dataset_name, split=split, streaming=streaming)
-
-    for row_index, record in enumerate(dataset, start=1):
-        problem = record.get("problem_statement")
-        if not isinstance(problem, str) or not problem.strip():
-            continue
-        prompt_id = record.get("instance_id") or f"swebench-{row_index}"
-        prompts.append({"id": str(prompt_id), "prompt": problem.strip()})
-        if limit is not None and len(prompts) >= limit:
-            break
+    prompts = _reservoir_sample_filtered_dataset(
+        dataset_name=dataset_name,
+        split=split,
+        streaming=streaming,
+        limit=limit,
+        seed=seed,
+        row_builder=lambda record, row_index: _swebench_prompt_record(record, row_index),
+    )
 
     if not prompts:
         raise ValueError(
@@ -197,21 +170,17 @@ def load_terminalbench_hf_prompts(
     dataset_name: str,
     split: str = "test",
     limit: int | None = None,
+    seed: int = 1234,
     streaming: bool = True,
 ) -> list[dict[str, Any]]:
-    from datasets import load_dataset
-
-    prompts: list[dict[str, Any]] = []
-    dataset = load_dataset(dataset_name, split=split, streaming=streaming)
-
-    for row_index, record in enumerate(dataset, start=1):
-        description = record.get("base_description")
-        if not isinstance(description, str) or not description.strip():
-            continue
-        prompt_id = record.get("task_id") or f"terminalbench-{row_index}"
-        prompts.append({"id": str(prompt_id), "prompt": description.strip()})
-        if limit is not None and len(prompts) >= limit:
-            break
+    prompts = _reservoir_sample_filtered_dataset(
+        dataset_name=dataset_name,
+        split=split,
+        streaming=streaming,
+        limit=limit,
+        seed=seed,
+        row_builder=lambda record, row_index: _terminalbench_prompt_record(record, row_index),
+    )
 
     if not prompts:
         raise ValueError(
@@ -224,35 +193,24 @@ def load_xsum_hf_prompts(
     dataset_name: str,
     split: str = "test",
     limit: int | None = None,
+    seed: int = 1234,
     streaming: bool = True,
     min_document_chars: int | None = None,
     max_document_chars: int | None = None,
 ) -> list[dict[str, Any]]:
-    from datasets import load_dataset
-
-    prompts: list[dict[str, Any]] = []
-    dataset = load_dataset(dataset_name, split=split, streaming=streaming)
-
-    for row_index, record in enumerate(dataset, start=1):
-        document = record.get("document")
-        if not isinstance(document, str):
-            continue
-        document = document.strip()
-        if not document:
-            continue
-        if min_document_chars is not None and len(document) < min_document_chars:
-            continue
-        if max_document_chars is not None and len(document) > max_document_chars:
-            continue
-
-        prompt = (
-            "Summarize the following article in 1-3 sentences.\n\n"
-            f"Article:\n{document}\n\nSummary:"
-        )
-        prompt_id = record.get("id") or f"xsum-{row_index}"
-        prompts.append({"id": str(prompt_id), "prompt": prompt})
-        if limit is not None and len(prompts) >= limit:
-            break
+    prompts = _reservoir_sample_filtered_dataset(
+        dataset_name=dataset_name,
+        split=split,
+        streaming=streaming,
+        limit=limit,
+        seed=seed,
+        row_builder=lambda record, row_index: _xsum_prompt_record(
+            record,
+            row_index=row_index,
+            min_document_chars=min_document_chars,
+            max_document_chars=max_document_chars,
+        ),
+    )
 
     if not prompts:
         raise ValueError(
@@ -268,54 +226,228 @@ def load_translation_hf_prompts(
     target_language: str,
     split: str = "test",
     limit: int | None = None,
+    seed: int = 1234,
     streaming: bool = True,
     min_source_chars: int | None = None,
     max_source_chars: int | None = None,
 ) -> list[dict[str, Any]]:
-    from datasets import load_dataset
-
-    prompts: list[dict[str, Any]] = []
-    dataset = load_dataset(
-        dataset_name,
-        config_name,
-        split=split,
-        streaming=streaming,
-    )
-
     source_label = _language_display_name(source_language)
     target_label = _language_display_name(target_language)
-
-    for row_index, record in enumerate(dataset, start=1):
-        translation = record.get("translation")
-        if not isinstance(translation, dict):
-            continue
-        source_text = translation.get(source_language)
-        target_text = translation.get(target_language)
-        if not isinstance(source_text, str) or not isinstance(target_text, str):
-            continue
-        source_text = source_text.strip()
-        if not source_text:
-            continue
-        if min_source_chars is not None and len(source_text) < min_source_chars:
-            continue
-        if max_source_chars is not None and len(source_text) > max_source_chars:
-            continue
-
-        prompt = (
-            f"Translate the following text from {source_label} to {target_label}. "
-            "Return only the translation.\n\n"
-            f"{source_label}:\n{source_text}\n\n{target_label}:"
-        )
-        prompt_id = record.get("id") or f"translation-{row_index}"
-        prompts.append({"id": str(prompt_id), "prompt": prompt})
-        if limit is not None and len(prompts) >= limit:
-            break
+    prompts = _reservoir_sample_filtered_dataset(
+        dataset_name=dataset_name,
+        split=split,
+        streaming=streaming,
+        limit=limit,
+        seed=seed,
+        config_name=config_name,
+        row_builder=lambda record, row_index: _translation_prompt_record(
+            record,
+            row_index=row_index,
+            source_language=source_language,
+            target_language=target_language,
+            source_label=source_label,
+            target_label=target_label,
+            min_source_chars=min_source_chars,
+            max_source_chars=max_source_chars,
+        ),
+    )
 
     if not prompts:
         raise ValueError(
             f"No prompts loaded from dataset={dataset_name!r}, config={config_name!r}, split={split!r}"
         )
     return prompts
+
+
+def _sample_records(
+    prompts: list[dict[str, Any]],
+    *,
+    limit: int | None,
+    seed: int,
+) -> list[dict[str, Any]]:
+    if limit is None or len(prompts) <= limit:
+        return prompts
+    rng = random.Random(seed)
+    sampled = list(prompts)
+    rng.shuffle(sampled)
+    return sampled[:limit]
+
+
+def _reservoir_sample_filtered_dataset(
+    *,
+    dataset_name: str,
+    split: str,
+    streaming: bool,
+    limit: int | None,
+    seed: int,
+    row_builder: Any,
+    config_name: str | None = None,
+) -> list[dict[str, Any]]:
+    from datasets import load_dataset
+
+    if config_name is None:
+        dataset = load_dataset(dataset_name, split=split, streaming=streaming)
+    else:
+        dataset = load_dataset(
+            dataset_name,
+            config_name,
+            split=split,
+            streaming=streaming,
+        )
+
+    prompts: list[dict[str, Any]] = []
+
+    for row_index, record in enumerate(dataset, start=1):
+        prompt_record = row_builder(record, row_index)
+        if prompt_record is None:
+            continue
+        prompts.append(prompt_record)
+
+    return _sample_records(prompts, limit=limit, seed=seed)
+
+
+def _wildchat_prompt_record(
+    record: dict[str, Any],
+    *,
+    row_index: int,
+    language: str | None,
+    max_messages: int | None,
+    min_user_chars: int | None,
+    max_user_chars: int | None,
+    include_keywords: list[str] | None,
+    exclude_keywords: list[str] | None,
+) -> dict[str, Any] | None:
+    if language is not None and record.get("language") != language:
+        return None
+    if record.get("redacted") is True:
+        return None
+
+    messages = _wildchat_messages_for_generation(record)
+    if messages is None:
+        return None
+    if not _wildchat_matches_filters(
+        messages,
+        max_messages=max_messages,
+        min_user_chars=min_user_chars,
+        max_user_chars=max_user_chars,
+        include_keywords=include_keywords,
+        exclude_keywords=exclude_keywords,
+    ):
+        return None
+
+    prompt_id = record.get("conversation_id") or f"wildchat-{row_index}"
+    return {"id": str(prompt_id), "messages": messages}
+
+
+def _alpaca_prompt_record(
+    record: dict[str, Any],
+    *,
+    row_index: int,
+    min_user_chars: int | None,
+    max_user_chars: int | None,
+    include_keywords: list[str] | None,
+    exclude_keywords: list[str] | None,
+) -> dict[str, Any] | None:
+    messages = _alpaca_messages_for_generation(record)
+    if messages is None:
+        return None
+    if not _wildchat_matches_filters(
+        messages,
+        max_messages=1,
+        min_user_chars=min_user_chars,
+        max_user_chars=max_user_chars,
+        include_keywords=include_keywords,
+        exclude_keywords=exclude_keywords,
+    ):
+        return None
+
+    prompt_id = record.get("instruction") or f"alpaca-{row_index}"
+    return {"id": str(prompt_id), "messages": messages}
+
+
+def _spider_prompt_record(record: dict[str, Any], row_index: int) -> dict[str, Any] | None:
+    prompt = _spider_prompt_for_generation(record)
+    if prompt is None:
+        return None
+    prompt_id = record.get("db_id") or record.get("id") or f"spider-{row_index}"
+    return {"id": str(prompt_id), "prompt": prompt}
+
+
+def _swebench_prompt_record(record: dict[str, Any], row_index: int) -> dict[str, Any] | None:
+    problem = record.get("problem_statement")
+    if not isinstance(problem, str) or not problem.strip():
+        return None
+    prompt_id = record.get("instance_id") or f"swebench-{row_index}"
+    return {"id": str(prompt_id), "prompt": problem.strip()}
+
+
+def _terminalbench_prompt_record(record: dict[str, Any], row_index: int) -> dict[str, Any] | None:
+    description = record.get("base_description")
+    if not isinstance(description, str) or not description.strip():
+        return None
+    prompt_id = record.get("task_id") or f"terminalbench-{row_index}"
+    return {"id": str(prompt_id), "prompt": description.strip()}
+
+
+def _xsum_prompt_record(
+    record: dict[str, Any],
+    *,
+    row_index: int,
+    min_document_chars: int | None,
+    max_document_chars: int | None,
+) -> dict[str, Any] | None:
+    document = record.get("document")
+    if not isinstance(document, str):
+        return None
+    document = document.strip()
+    if not document:
+        return None
+    if min_document_chars is not None and len(document) < min_document_chars:
+        return None
+    if max_document_chars is not None and len(document) > max_document_chars:
+        return None
+
+    prompt = (
+        "Summarize the following article in 1-3 sentences.\n\n"
+        f"Article:\n{document}\n\nSummary:"
+    )
+    prompt_id = record.get("id") or f"xsum-{row_index}"
+    return {"id": str(prompt_id), "prompt": prompt}
+
+
+def _translation_prompt_record(
+    record: dict[str, Any],
+    *,
+    row_index: int,
+    source_language: str,
+    target_language: str,
+    source_label: str,
+    target_label: str,
+    min_source_chars: int | None,
+    max_source_chars: int | None,
+) -> dict[str, Any] | None:
+    translation = record.get("translation")
+    if not isinstance(translation, dict):
+        return None
+    source_text = translation.get(source_language)
+    target_text = translation.get(target_language)
+    if not isinstance(source_text, str) or not isinstance(target_text, str):
+        return None
+    source_text = source_text.strip()
+    if not source_text:
+        return None
+    if min_source_chars is not None and len(source_text) < min_source_chars:
+        return None
+    if max_source_chars is not None and len(source_text) > max_source_chars:
+        return None
+
+    prompt = (
+        f"Translate the following text from {source_label} to {target_label}. "
+        "Return only the translation.\n\n"
+        f"{source_label}:\n{source_text}\n\n{target_label}:"
+    )
+    prompt_id = record.get("id") or f"translation-{row_index}"
+    return {"id": str(prompt_id), "prompt": prompt}
 
 
 def _wildchat_messages_for_generation(

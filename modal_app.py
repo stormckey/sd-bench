@@ -199,12 +199,14 @@ class BenchmarkWorker:
             return load_jsonl_prompts(
                 _resolve_prompt_path(config.prompt_path),
                 limit=config.limit,
+                seed=config.seed,
             )
         if config.prompt_source == "wildchat_hf":
             return load_wildchat_hf_prompts(
                 dataset_name=config.dataset_name or "allenai/WildChat",
                 split=config.dataset_split,
                 limit=config.limit,
+                seed=config.seed,
                 language=config.dataset_language,
                 streaming=config.dataset_streaming,
                 max_messages=config.dataset_max_messages,
@@ -218,6 +220,7 @@ class BenchmarkWorker:
                 dataset_name=config.dataset_name or "yahma/alpaca-cleaned",
                 split=config.dataset_split,
                 limit=config.limit,
+                seed=config.seed,
                 streaming=config.dataset_streaming,
                 min_user_chars=config.dataset_min_user_chars,
                 max_user_chars=config.dataset_max_user_chars,
@@ -229,6 +232,7 @@ class BenchmarkWorker:
                 dataset_name=config.dataset_name or "EdinburghNLP/xsum",
                 split=config.dataset_split,
                 limit=config.limit,
+                seed=config.seed,
                 streaming=config.dataset_streaming,
                 min_document_chars=config.dataset_min_user_chars,
                 max_document_chars=config.dataset_max_user_chars,
@@ -241,6 +245,7 @@ class BenchmarkWorker:
                 target_language=config.dataset_target_language or "en",
                 split=config.dataset_split,
                 limit=config.limit,
+                seed=config.seed,
                 streaming=config.dataset_streaming,
                 min_source_chars=config.dataset_min_user_chars,
                 max_source_chars=config.dataset_max_user_chars,
@@ -250,6 +255,7 @@ class BenchmarkWorker:
                 dataset_name=config.dataset_name or "lamini/spider_text_to_sql",
                 split=config.dataset_split,
                 limit=config.limit,
+                seed=config.seed,
                 streaming=config.dataset_streaming,
             )
         if config.prompt_source == "swebench_hf":
@@ -257,6 +263,7 @@ class BenchmarkWorker:
                 dataset_name=config.dataset_name or "princeton-nlp/SWE-bench",
                 split=config.dataset_split,
                 limit=config.limit,
+                seed=config.seed,
                 streaming=config.dataset_streaming,
             )
         if config.prompt_source == "terminalbench_hf":
@@ -264,6 +271,7 @@ class BenchmarkWorker:
                 dataset_name=config.dataset_name or "ia03/terminal-bench",
                 split=config.dataset_split,
                 limit=config.limit,
+                seed=config.seed,
                 streaming=config.dataset_streaming,
             )
         raise ValueError(f"Unsupported prompt_source: {config.prompt_source}")
@@ -286,6 +294,7 @@ def main(
         prompts = load_jsonl_prompts(
             _resolve_prompt_path(config.prompt_path),
             limit=config.limit,
+            seed=config.seed,
         )
     else:
         prompts = None
