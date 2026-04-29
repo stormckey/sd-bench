@@ -65,10 +65,17 @@ results_volume = modal.Volume.from_name(
     version=2,
 )
 
+runtime_secret_payload: dict[str, str] = {}
 if modal.is_local() and os.environ.get("HF_TOKEN"):
-    hf_secret = modal.Secret.from_dict({"HF_TOKEN": os.environ["HF_TOKEN"]})
-else:
-    hf_secret = modal.Secret.from_dict({})
+    runtime_secret_payload["HF_TOKEN"] = os.environ["HF_TOKEN"]
+if modal.is_local() and os.environ.get("TREE_SPEC_DEBUG"):
+    runtime_secret_payload["TREE_SPEC_DEBUG"] = os.environ["TREE_SPEC_DEBUG"]
+if modal.is_local() and os.environ.get("TREE_SPEC_DEBUG_LIMIT"):
+    runtime_secret_payload["TREE_SPEC_DEBUG_LIMIT"] = os.environ["TREE_SPEC_DEBUG_LIMIT"]
+if modal.is_local() and os.environ.get("TREE_SPEC_DEBUG_ROW0_COMPARE"):
+    runtime_secret_payload["TREE_SPEC_DEBUG_ROW0_COMPARE"] = os.environ["TREE_SPEC_DEBUG_ROW0_COMPARE"]
+
+hf_secret = modal.Secret.from_dict(runtime_secret_payload)
 
 
 def _resolve_prompt_path(prompt_path: str) -> Path:
@@ -138,6 +145,7 @@ class BenchmarkWorker:
             cache_dir=HF_CACHE_DIR,
             token=token,
             dtype=torch_dtype,
+            attn_implementation=config.get_method_option("attn_implementation", None),
             device_map=(
                 {"": "cuda:0"}
                 if config.separate_assistant_gpu and torch.cuda.device_count() >= 2
