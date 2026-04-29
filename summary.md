@@ -945,3 +945,33 @@ This section records the completed `limit 50` local-only comparison between `suf
 |---|---:|---:|---:|---:|---:|
 | tree-spec [local] | 12,796 | 9.5 | 6.9 | 86.4% | 159.9 |
 | suffix_speculative [local] | 19,725 | 8.5 | 3.9 | 75.5% | 119.7 |
+
+---
+
+## Final Data: Tree-Spec [Local] Incremental Cache Limit-50 Sweep
+
+This section records the current `tree-spec [local]` results after enabling the incremental-cache verifier path and cleaning the benchmark output back to the standard speculation metrics.
+
+- **Date:** `2026-04-29`
+- **Method:** `tree-spec [local]`
+- **Verifier:** `incremental cache when available, full recompute fallback on root miss`
+- **Model:** `Qwen/Qwen3-8B`
+- **GPU:** `L40S`
+- **Prompts per workload:** `50`
+
+| Workload | Tokens | Tok/s | Latency (s) | Peak Mem (MB) | Draft Acc | Steps | Prop/Step | Acc/Step | AccFrac | E2E Tok/s | Wall Time (s) |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| Spider | 25,600 | 89.0 | 287.57 | 15,985 | 44.8% | 4,909 | 8.5 | 3.8 | 73.0% | 78.7 | 325.3 |
+| SWE-bench | 102,400 | 169.2 | 605.33 | 17,177 | 80.4% | 11,722 | 9.5 | 7.6 | 87.5% | 161.3 | 634.8 |
+| TerminalBench | 51,200 | 191.4 | 267.43 | 18,045 | 74.9% | 6,303 | 9.3 | 7.0 | 85.7% | 172.6 | 296.6 |
+| WildChat code | 50,206 | 164.8 | 304.63 | 16,111 | 70.7% | 6,484 | 9.1 | 6.4 | 83.1% | 75.6 | 664.3 |
+| WildChat translate | 29,116 | 207.2 | 140.54 | 15,912 | 84.8% | 3,138 | 9.3 | 7.9 | 85.2% | 55.7 | 522.8 |
+| WMT14 fr-en | 51,200 | 181.7 | 281.78 | 16,071 | 75.7% | 6,163 | 9.3 | 7.1 | 85.0% | 163.2 | 313.8 |
+
+### Summary
+
+- The incremental-cache verifier now produces strong, stable `tree-spec [local]` results across all six workloads, with **overall throughput ranging from 89.0 tok/s (Spider) to 207.2 tok/s (WildChat translate)**.
+- The best acceptance quality appears on **WildChat translate** and **SWE-bench**, reaching **84.8%** and **80.4%** draft-token acceptance, respectively.
+- **Spider** remains the weakest workload for this path, but even there the incremental-enabled run reaches **89.0 tok/s** and **44.8%** draft accuracy, materially stronger than the earlier low-acceptance tree-spec runs.
+- **TerminalBench**, **WMT14**, and **SWE-bench** all now sit in a strong high-acceptance regime, around **74.9% to 80.4%** draft-token acceptance and roughly **7 accepted tokens per step**.
+- Compared with the earlier `tree-spec [local+global]` sweeps, the new `local_only + incremental-cache` setup is both more stable and substantially more accurate, reinforcing `local_only` as the correct baseline for further tree-spec work.

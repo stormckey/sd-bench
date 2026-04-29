@@ -31,7 +31,7 @@
     "tree_spec_decoding_max_depth": 64,
     "tree_spec_decoding_min_prob": 0.1,
     "tree_spec_decoding_branch_factor": 2,
-    "tree_spec_decoding_source_mode": "local_and_global"
+    "tree_spec_decoding_source_mode": "local_only"
   },
   "notes": "Filtered WildChat slice focused on short translation prompts only, using tree-based suffix speculative decoding."
 }
