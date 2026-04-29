@@ -370,7 +370,8 @@ def _spider_prompt_record(record: dict[str, Any], row_index: int) -> dict[str, A
     if prompt is None:
         return None
     prompt_id = record.get("db_id") or record.get("id") or f"spider-{row_index}"
-    return {"id": str(prompt_id), "prompt": prompt}
+    messages = [{"role": "user", "content": prompt}]
+    return {"id": str(prompt_id), "messages": messages}
 
 
 def _swebench_prompt_record(record: dict[str, Any], row_index: int) -> dict[str, Any] | None:
@@ -378,7 +379,8 @@ def _swebench_prompt_record(record: dict[str, Any], row_index: int) -> dict[str,
     if not isinstance(problem, str) or not problem.strip():
         return None
     prompt_id = record.get("instance_id") or f"swebench-{row_index}"
-    return {"id": str(prompt_id), "prompt": problem.strip()}
+    messages = [{"role": "user", "content": problem.strip()}]
+    return {"id": str(prompt_id), "messages": messages}
 
 
 def _terminalbench_prompt_record(record: dict[str, Any], row_index: int) -> dict[str, Any] | None:
@@ -386,7 +388,8 @@ def _terminalbench_prompt_record(record: dict[str, Any], row_index: int) -> dict
     if not isinstance(description, str) or not description.strip():
         return None
     prompt_id = record.get("task_id") or f"terminalbench-{row_index}"
-    return {"id": str(prompt_id), "prompt": description.strip()}
+    messages = [{"role": "user", "content": description.strip()}]
+    return {"id": str(prompt_id), "messages": messages}
 
 
 def _xsum_prompt_record(
