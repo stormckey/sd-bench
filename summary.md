@@ -717,3 +717,231 @@ PYTHONPATH=src python -m bench.cli compare spider --limit 10
   - However, these acceptance improvements did not translate into better throughput
 - This indicates that higher acceptance statistics from broader matching were offset by additional overhead.
 - On this workload, **local matching alone** provided the best practical decoding speed, while **global components were not beneficial end-to-end**.
+
+---
+
+## Final Data: Non-Suffix Limit-50 Sweep
+
+This section records the final `limit 50` runs for all non-suffix methods across the six benchmark families: `vanilla`, `draft-spec`, `prompt-lookup`, and `tree-spec [local+global]`.
+
+### WMT14
+
+- **Model:** `Qwen/Qwen3-8B`
+- **Dataset:** `wmt14`
+- **GPU:** `L40S`
+- **Prompts:** `50`
+
+| Method | Tokens | Tok/s | Latency (s) | Peak Mem (MB) | Draft Acc | Wall Time (s) |
+|---|---:|---:|---:|---:|---:|---:|
+| vanilla | 50,091 | 38.4 | 1303.82 | 15,795 | - | 1339.4 |
+| draft-spec (`Qwen3-0.6B`) | 48,650 | 30.3 | 1604.50 | 17,111 | 43.4% | 1636.8 |
+| prompt-lookup | 50,650 | 64.1 | 790.70 | 15,821 | - | 840.0 |
+| tree-spec [local+global] | 51,200 | 116.8 | 438.54 | 15,900 | 27.6% | 480.1 |
+
+| Method | Steps | Prop/Step | Acc/Step | AccFrac | E2E Tok/s |
+|---|---:|---:|---:|---:|---:|
+| draft-spec (`Qwen3-0.6B`) | 8,494 | 10.9 | 4.7 | 82.5% | 29.7 |
+| tree-spec [local+global] | 13,717 | 9.7 | 2.7 | 71.6% | 106.6 |
+
+### WildChat Translate
+
+- **Model:** `Qwen/Qwen3-8B`
+- **Dataset:** `allenai/WildChat`
+- **GPU:** `L40S`
+- **Prompts:** `50`
+
+| Method | Tokens | Tok/s | Latency (s) | Peak Mem (MB) | Draft Acc | Wall Time (s) |
+|---|---:|---:|---:|---:|---:|---:|
+| vanilla | 7,017 | 38.2 | 183.47 | 15,781 | - | 569.3 |
+| draft-spec (`Qwen3-0.6B`) | 6,448 | 26.3 | 244.76 | 17,059 | 33.3% | 615.2 |
+| prompt-lookup | 7,421 | 54.5 | 136.20 | 15,805 | - | 520.6 |
+| tree-spec [local+global] | 29,959 | 89.4 | 335.04 | 15,836 | 21.6% | 709.1 |
+
+| Method | Steps | Prop/Step | Acc/Step | AccFrac | E2E Tok/s |
+|---|---:|---:|---:|---:|---:|
+| draft-spec (`Qwen3-0.6B`) | 2,291 | 5.4 | 1.8 | 64.5% | 10.5 |
+| tree-spec [local+global] | 9,490 | 9.7 | 2.1 | 66.2% | 42.2 |
+
+### WildChat Code
+
+- **Model:** `Qwen/Qwen3-8B`
+- **Dataset:** `allenai/WildChat`
+- **GPU:** `L40S`
+- **Prompts:** `50`
+
+| Method | Tokens | Tok/s | Latency (s) | Peak Mem (MB) | Draft Acc | Wall Time (s) |
+|---|---:|---:|---:|---:|---:|---:|
+| vanilla | 36,937 | 38.4 | 962.17 | 15,814 | - | 1325.5 |
+| draft-spec (`Qwen3-0.6B`) | 37,670 | 27.2 | 1383.69 | 17,111 | 36.3% | 1780.6 |
+| prompt-lookup | 36,891 | 50.0 | 737.12 | 15,841 | - | 1092.4 |
+| tree-spec [local+global] | 50,232 | 93.9 | 534.88 | 15,890 | 24.4% | 884.4 |
+
+| Method | Steps | Prop/Step | Acc/Step | AccFrac | E2E Tok/s |
+|---|---:|---:|---:|---:|---:|
+| draft-spec (`Qwen3-0.6B`) | 9,559 | 8.1 | 2.9 | 74.6% | 21.2 |
+| tree-spec [local+global] | 14,684 | 9.7 | 2.4 | 69.4% | 56.8 |
+
+### SWE-bench
+
+- **Model:** `Qwen/Qwen3-8B`
+- **Dataset:** `princeton-nlp/SWE-bench`
+- **GPU:** `L40S`
+- **Prompts:** `50`
+
+| Method | Tokens | Tok/s | Latency (s) | Peak Mem (MB) | Draft Acc | Wall Time (s) |
+|---|---:|---:|---:|---:|---:|---:|
+| vanilla | 102,400 | 37.7 | 2713.73 | 16,318 | - | 2742.7 |
+| draft-spec (`Qwen3-0.6B`) | 102,400 | 45.0 | 2275.06 | 18,088 | 70.5% | 2334.0 |
+| prompt-lookup | 102,450 | 81.9 | 1251.28 | 16,394 | - | 1320.1 |
+| tree-spec [local+global] | 102,400 | 109.9 | 931.65 | 16,734 | 46.9% | 970.7 |
+
+| Method | Steps | Prop/Step | Acc/Step | AccFrac | E2E Tok/s |
+|---|---:|---:|---:|---:|---:|
+| draft-spec (`Qwen3-0.6B`) | 12,093 | 10.6 | 7.5 | 88.2% | 43.9 |
+| tree-spec [local+global] | 18,112 | 9.9 | 4.6 | 82.0% | 105.5 |
+
+### Spider
+
+- **Model:** `Qwen/Qwen3-8B`
+- **Dataset:** `lamini/spider_text_to_sql`
+- **GPU:** `L40S`
+- **Prompts:** `50`
+
+| Method | Tokens | Tok/s | Latency (s) | Peak Mem (MB) | Draft Acc | Wall Time (s) |
+|---|---:|---:|---:|---:|---:|---:|
+| vanilla | 25,600 | 38.3 | 667.88 | 15,784 | - | 713.3 |
+| draft-spec (`Qwen3-0.6B`) | 25,600 | 21.0 | 1220.41 | 17,094 | 27.3% | 1262.8 |
+| prompt-lookup | 25,615 | 49.7 | 515.09 | 15,808 | - | 538.8 |
+| tree-spec [local+global] | 25,600 | 111.4 | 229.73 | 15,961 | 31.2% | 255.3 |
+
+| Method | Steps | Prop/Step | Acc/Step | AccFrac | E2E Tok/s |
+|---|---:|---:|---:|---:|---:|
+| draft-spec (`Qwen3-0.6B`) | 7,182 | 9.4 | 2.6 | 71.9% | 20.3 |
+| tree-spec [local+global] | 6,348 | 9.6 | 3.0 | 74.2% | 100.3 |
+
+### TerminalBench
+
+- **Model:** `Qwen/Qwen3-8B`
+- **Dataset:** `ia03/terminal-bench`
+- **GPU:** `L40S`
+- **Prompts:** `50`
+
+| Method | Tokens | Tok/s | Latency (s) | Peak Mem (MB) | Draft Acc | Wall Time (s) |
+|---|---:|---:|---:|---:|---:|---:|
+| vanilla | 50,660 | 38.2 | 1325.29 | 16,702 | - | 1359.6 |
+| draft-spec (`Qwen3-0.6B`) | 50,619 | 37.5 | 1350.50 | 18,331 | 55.6% | 1382.3 |
+| prompt-lookup | 50,655 | 70.4 | 719.27 | 16,705 | - | 747.4 |
+| tree-spec [local+global] | 51,200 | 157.5 | 325.05 | 17,368 | 53.8% | 358.3 |
+
+| Method | Steps | Prop/Step | Acc/Step | AccFrac | E2E Tok/s |
+|---|---:|---:|---:|---:|---:|
+| draft-spec (`Qwen3-0.6B`) | 8,829 | 8.5 | 4.7 | 82.5% | 36.6 |
+| tree-spec [local+global] | 8,151 | 9.8 | 5.2 | 83.5% | 142.9 |
+
+---
+
+## Final Data: Local-Only Suffix vs Tree-Spec Limit-50 Sweep
+
+This section records the completed `limit 50` local-only comparison between `suffix_speculative [local]` and `tree-spec [local]` across the benchmark families.
+
+### WMT14
+
+- **Model:** `Qwen/Qwen3-8B`
+- **Dataset:** `wmt14`
+- **GPU:** `L40S`
+- **Prompts:** `50`
+
+| Method | Tokens | Tok/s | Latency (s) | Peak Mem (MB) | Draft Acc | Wall Time (s) |
+|---|---:|---:|---:|---:|---:|---:|
+| tree-spec [local] | 51,200 | 169.1 | 302.78 | 16,088 | 66.3% | 351.1 |
+| suffix_speculative [local] | 50,655 | 81.8 | 619.03 | 15,828 | 24.0% | 647.7 |
+
+| Method | Steps | Prop/Step | Acc/Step | AccFrac | E2E Tok/s |
+|---|---:|---:|---:|---:|---:|
+| tree-spec [local] | 6,945 | 9.3 | 6.1 | 83.3% | 145.8 |
+| suffix_speculative [local] | 14,550 | 8.0 | 1.9 | 55.4% | 78.2 |
+
+### WildChat Translate
+
+- **Model:** `Qwen/Qwen3-8B`
+- **Dataset:** `allenai/WildChat`
+- **GPU:** `L40S`
+- **Prompts:** `50`
+
+| Method | Tokens | Tok/s | Latency (s) | Peak Mem (MB) | Draft Acc | Wall Time (s) |
+|---|---:|---:|---:|---:|---:|---:|
+| tree-spec [local] | 32,601 | 202.3 | 161.14 | 15,914 | 72.6% | 508.7 |
+| suffix_speculative [local] | 7,341 | 57.0 | 128.78 | 15,814 | 18.8% | 484.6 |
+
+| Method | Steps | Prop/Step | Acc/Step | AccFrac | E2E Tok/s |
+|---|---:|---:|---:|---:|---:|
+| tree-spec [local] | 4,075 | 9.2 | 6.7 | 83.4% | 64.1 |
+| suffix_speculative [local] | 2,043 | 7.6 | 1.4 | 39.9% | 15.1 |
+
+### WildChat Code
+
+- **Model:** `Qwen/Qwen3-8B`
+- **Dataset:** `allenai/WildChat`
+- **GPU:** `L40S`
+- **Prompts:** `50`
+
+| Method | Tokens | Tok/s | Latency (s) | Peak Mem (MB) | Draft Acc | Wall Time (s) |
+|---|---:|---:|---:|---:|---:|---:|
+| tree-spec [local] | 51,200 | 164.9 | 310.53 | 16,068 | 64.4% | 683.4 |
+| suffix_speculative [local] | 37,635 | 46.5 | 810.05 | 15,847 | 9.0% | 1174.7 |
+
+| Method | Steps | Prop/Step | Acc/Step | AccFrac | E2E Tok/s |
+|---|---:|---:|---:|---:|---:|
+| tree-spec [local] | 7,147 | 9.2 | 5.9 | 82.6% | 74.9 |
+| suffix_speculative [local] | 15,194 | 7.6 | 0.7 | 27.5% | 32.0 |
+
+### Spider
+
+- **Model:** `Qwen/Qwen3-8B`
+- **Dataset:** `lamini/spider_text_to_sql`
+- **GPU:** `L40S`
+- **Prompts:** `50`
+
+| Method | Tokens | Tok/s | Latency (s) | Peak Mem (MB) | Draft Acc | Wall Time (s) |
+|---|---:|---:|---:|---:|---:|---:|
+| tree-spec [local] | 25,600 | 82.0 | 312.06 | 16,060 | 34.6% | 339.0 |
+| suffix_speculative [local] | 25,600 | 44.8 | 571.40 | 15,816 | 7.4% | 595.0 |
+
+| Method | Steps | Prop/Step | Acc/Step | AccFrac | E2E Tok/s |
+|---|---:|---:|---:|---:|---:|
+| tree-spec [local] | 5,997 | 8.5 | 3.0 | 69.2% | 75.5 |
+| suffix_speculative [local] | 12,004 | 7.6 | 0.6 | 26.2% | 43.0 |
+
+### TerminalBench
+
+- **Model:** `Qwen/Qwen3-8B`
+- **Dataset:** `ia03/terminal-bench`
+- **GPU:** `L40S`
+- **Prompts:** `50`
+
+| Method | Tokens | Tok/s | Latency (s) | Peak Mem (MB) | Draft Acc | Wall Time (s) |
+|---|---:|---:|---:|---:|---:|---:|
+| tree-spec [local] | 51,200 | 111.8 | 457.86 | 18,049 | 55.7% | 485.7 |
+| suffix_speculative [local] | 50,609 | 76.4 | 662.14 | 16,704 | 24.6% | 685.7 |
+
+| Method | Steps | Prop/Step | Acc/Step | AccFrac | E2E Tok/s |
+|---|---:|---:|---:|---:|---:|
+| tree-spec [local] | 8,289 | 9.0 | 5.0 | 81.3% | 105.4 |
+| suffix_speculative [local] | 15,144 | 7.9 | 1.9 | 58.2% | 73.8 |
+
+### SWE-bench
+
+- **Model:** `Qwen/Qwen3-8B`
+- **Dataset:** `princeton-nlp/SWE-bench`
+- **GPU:** `L40S`
+- **Prompts:** `50`
+
+| Method | Tokens | Tok/s | Latency (s) | Peak Mem (MB) | Draft Acc | Wall Time (s) |
+|---|---:|---:|---:|---:|---:|---:|
+| tree-spec [local] | 102,400 | 166.7 | 614.26 | 17,210 | 73.1% | 640.3 |
+| suffix_speculative [local] | 101,404 | 123.1 | 823.85 | 16,400 | 45.7% | 847.1 |
+
+| Method | Steps | Prop/Step | Acc/Step | AccFrac | E2E Tok/s |
+|---|---:|---:|---:|---:|---:|
+| tree-spec [local] | 12,796 | 9.5 | 6.9 | 86.4% | 159.9 |
+| suffix_speculative [local] | 19,725 | 8.5 | 3.9 | 75.5% | 119.7 |
