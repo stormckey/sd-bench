@@ -14,8 +14,9 @@
             <p class="eyebrow">MLSys Project Poster</p>
             <h1>Suffix Speculative Decoding for Faster LLM Serving</h1>
             <p class="hero-thesis">
-              Suffix-based speculation improves LLM serving throughput without a
-              separate draft model.
+              Suffix speculation improves LLM decoding without a draft model;
+              tree-based verification reveals when more aggressive speculation
+              pays off.
             </p>
             <p class="hero-meta">
               Chenhao Gao, Yuchen Zhou, Zihao Du
@@ -26,16 +27,16 @@
 
           <div class="hero-badges" aria-label="Top results">
             <section class="badge-card accent-blue">
-              <p class="badge-value">2.02x</p>
-              <p class="badge-label">WMT14 speedup over vanilla</p>
+              <p class="badge-value">1.74x</p>
+              <p class="badge-label">WildChat code suffix [local] speedup at limit 10</p>
             </section>
             <section class="badge-card accent-green">
-              <p class="badge-value">4.40x</p>
-              <p class="badge-label">WildChat translate speedup</p>
+              <p class="badge-value">1.19x</p>
+              <p class="badge-label">WMT14 suffix [local] speedup at limit 10</p>
             </section>
             <section class="badge-card accent-orange">
-              <p class="badge-value">2.47x</p>
-              <p class="badge-label">SWE-bench speedup</p>
+              <p class="badge-value">1.30x</p>
+              <p class="badge-label">SWE-bench tree-spec [local] speedup at limit 10</p>
             </section>
           </div>
         </header>
@@ -45,8 +46,9 @@
             <p class="card-kicker">Problem</p>
             <h2>Autoregressive decoding is the bottleneck</h2>
             <p>
-              Large language models generate one token per target-model forward
-              pass, which directly limits throughput and increases latency.
+              Large language models usually pay one target-model verification
+              pass per generated token, so throughput depends on reducing
+              verifier work without breaking output quality.
             </p>
           </article>
 
@@ -55,18 +57,18 @@
             <h2>No first-class suffix speculation path</h2>
             <p>
               Hugging Face already supports draft-model speculation and prompt
-              lookup, but not suffix speculative decoding inside the assisted
-              generation stack.
+              lookup, but not a suffix-based candidate generator inside the
+              assisted generation stack.
             </p>
           </article>
 
           <article class="context-card">
             <p class="card-kicker">Completed Contribution</p>
-            <h2>We added suffix decoding plus a benchmark harness</h2>
+            <h2>We added suffix decoding and benchmarked it against strong baselines</h2>
             <p>
               Our finished system extends <code>generate()</code> with a
-              suffix-based candidate generator and benchmarks it against unified
-              baselines on Modal.
+              suffix-based proposer, keeps a unified verification interface, and
+              evaluates suffix and tree-based decoding against shared baselines.
             </p>
           </article>
         </section>
@@ -97,7 +99,8 @@
                 <p>
                   It shows that all speculative methods still depend on
                   target-model verification. What changes is how candidate
-                  tokens are proposed before that verification step.
+                  tokens are proposed before that verification step and how much
+                  useful work the verifier can amortize.
                 </p>
               </article>
               <article class="caption-card">
@@ -105,16 +108,17 @@
                 <p>
                   Suffix decoding avoids an auxiliary draft model and extends
                   beyond exact prompt reuse by proposing continuations from
-                  repeated substrings found in context.
+                  repeated substrings found in context, making it a lightweight
+                  way to accelerate short generations.
                 </p>
               </article>
               <article class="future-box compact">
-                <p class="card-kicker">WIP Extension</p>
+                <p class="card-kicker">Evaluated Extension</p>
                 <h3>Tree-Based Verification</h3>
                 <p>
-                  The completed claim is the linear suffix proposal path shown
-                  here. Multi-branch verification remains future work and is
-                  intentionally outside the reported results.
+                  Tree-spec generalizes linear suffix proposals into multi-branch
+                  verification. We report it separately because its benefit is
+                  more regime-sensitive than the core suffix path.
                 </p>
               </article>
             </section>
@@ -133,25 +137,24 @@
               <li>Purple panel: speculative decoding with a separate small draft model.</li>
               <li>Orange panel: prompt lookup from repeated n-grams already in context.</li>
               <li>Green panel: suffix speculation from repeated substrings, with no extra model.</li>
-              <li>Accepted and rejected token rows make the shared verification bottleneck easy to compare across methods.</li>
+              <li>Tree-spec extends the same proposal-and-verification idea, but its larger payoff only appears when verifier overhead is amortized.</li>
             </ul>
 
             <div class="inset-callout">
               <p class="callout-title">What changed in <code>transformers</code></p>
               <p>
-                We implemented a suffix candidate generator and suffix-tree
-                cache support at the same assisted-generation interface already
-                used by the existing speculative baselines.
+                We implemented a suffix candidate generator at the same
+                assisted-generation boundary already used by draft-spec and
+                prompt lookup, enabling direct apples-to-apples comparisons.
               </p>
             </div>
 
             <div class="inset-callout">
               <p class="callout-title">Why this belongs in the report too</p>
               <p>
-                The paper and poster now share one visual language for the main
-                systems contribution: same verification loop, different proposal
-                mechanisms, and a clean boundary around unfinished tree-based
-                verification.
+                The unifying systems story is simple: all methods share the same
+                verifier, but different proposal mechanisms create very
+                different throughput-overhead tradeoffs.
               </p>
             </div>
           </aside>
@@ -159,36 +162,73 @@
 
         <section class="results band">
           <div class="results-grid">
-            <article class="panel chart-card hero-chart">
+            <article class="panel insight-card">
+              <div class="panel-header">
+                <div>
+                  <p class="card-kicker">Key Observation</p>
+                  <h2>Why suffix wins early</h2>
+                </div>
+              </div>
+              <p class="insight-lead">
+                In the short-output regime, suffix is usually the best practical
+                baseline even though its acceptance rate stays low.
+              </p>
+              <ul class="conclusion-list compact">
+                <li>It avoids a separate draft model and its coordination cost.</li>
+                <li>Proposals are cheap, so 7–10% acceptance still beats vanilla on 4 of 6 workloads.</li>
+                <li>Tree-spec [local] is within 0.02–0.03× of suffix on most workloads, taking the lead only on SWE-bench (1.30× vs 1.21×).</li>
+              </ul>
+            </article>
+
+            <article class="panel chart-card hero-chart chart-span-side compact-chart">
               <div class="chart-meta">
                 <span class="chart-status">Final Figure</span>
                 <span class="chart-source"><code>figures/speculative_speedup.png</code></span>
               </div>
-              <h3>Main speedup vs. vanilla</h3>
+              <h3>Suffix [Local] Delivers Consistent Short-Regime Speedups</h3>
               <p class="chart-subtitle">
-                Workloads: WMT14, WildChat translate, WildChat code, SWE-bench
+                All methods, local-only, limit 10 · Workloads: WMT14, WildChat translate/code, SWE-bench, Spider, TerminalBench
               </p>
               <figure class="chart-figure">
                 <img
-                  src="../figures/speculative_speedup.png"
-                  alt="Bar chart showing speedup over vanilla decoding across WMT14, WildChat translate, WildChat code, and SWE-bench."
+                  src="speculative_speedup_final.png"
+                  alt="Bar chart showing speedup over vanilla decoding for draft-spec, prompt-lookup, suffix local, and tree-spec local across six workloads."
                 />
               </figure>
               <p class="takeaway">
-                <strong>Takeaway:</strong> Suffix speculation beats vanilla on
-                all four completed workloads and is usually the best method
-                overall.
+                <strong>Takeaway:</strong> Suffix [local] wins on 4 of 6
+                workloads; tree-spec takes SWE-bench (1.30×); Spider is a
+                statistical tie. Draft-spec is slower than vanilla everywhere
+                despite its higher acceptance rate.
               </p>
             </article>
 
-            <article class="panel chart-card">
+            <article class="panel insight-card">
+              <div class="panel-header">
+                <div>
+                  <p class="card-kicker">Systems Lesson</p>
+                  <h2>Acceptance is not the objective</h2>
+                </div>
+              </div>
+              <p class="insight-lead">
+                Higher acceptance can still lose end-to-end if the proposal path
+                is expensive or the verifier cannot amortize enough work.
+              </p>
+              <ul class="conclusion-list compact">
+                <li>Draft-spec reaches 28–40% acceptance — far above suffix's 7–10% — yet is slower than vanilla on every workload.</li>
+                <li>Suffix wins with ~0.6–0.7 accepted tokens/step because its proposal path is lightweight.</li>
+                <li>The right metric is end-to-end throughput, not acceptance rate in isolation.</li>
+              </ul>
+            </article>
+
+            <article class="panel chart-card chart-span-side compact-chart">
               <div class="chart-meta">
                 <span class="chart-status">Final Figure</span>
                 <span class="chart-source">
                   <code>figures/suffix_ablation_normalized_to_local.png</code>
                 </span>
               </div>
-              <h3>Suffix source-mode ablation</h3>
+              <h3>Local Matching Is the Right Suffix Default</h3>
               <p class="chart-subtitle">
                 Compare <code>local</code>, <code>local+global</code>, and
                 <code>global-only</code>
@@ -200,51 +240,72 @@
                 />
               </figure>
               <p class="takeaway">
-                <strong>Takeaway:</strong> Local matching drives most of the
-                benefit; global-only matching is usually weak and sometimes
-                harmful.
+                <strong>Takeaway:</strong> Local matching is the right default —
+                it captures most of suffix’s gain on WMT14 and WildChat code,
+                while global matching adds cost without enough additional
+                useful proposals on most workloads.
               </p>
             </article>
 
-            <article class="panel chart-card">
+            <article class="panel chart-card compact-chart">
               <div class="chart-meta">
                 <span class="chart-status">Final Figure</span>
                 <span class="chart-source"><code>figures/proposal_vs_accept_per_step.png</code></span>
               </div>
-              <h3>Acceptance rate is not the whole story</h3>
+              <h3>Acceptance Rate Alone Does Not Predict Speed</h3>
               <p class="chart-subtitle">
-                Compare proposed support against accepted tokens per step
+                Accepted and proposed tokens per step · local-only, limit 10
               </p>
               <figure class="chart-figure">
                 <img
-                  src="../figures/proposal_vs_accept_per_step.png"
-                  alt="Chart comparing average proposed tokens per step against average accepted tokens per step for speculative decoding methods."
+                  src="proposal_vs_accept_final.png"
+                  alt="Side-by-side bar charts comparing accepted tokens per step and proposed tokens per step for draft-spec, suffix local, and tree-spec local."
                 />
               </figure>
               <p class="takeaway">
-                <strong>Takeaway:</strong> High acceptance rate does not
-                guarantee speed; suffix decoding can win even with lower raw
-                acceptance.
+                <strong>Takeaway:</strong> Draft-spec proposes 6–12 tokens/step
+                and accepts 2–5, yet loses to vanilla on every workload.
+                Suffix proposes 6–8 and accepts only ~0.6–0.7, yet wins most
+                workloads — verifier cost, not acceptance count, is the binding constraint.
               </p>
             </article>
 
-            <article class="panel chart-card">
-              <div class="chart-meta">
-                <span class="chart-status">Placeholder</span>
-                <span class="chart-source">Reserve this slot for the meme figure</span>
-              </div>
-              <h3>Meme Figure</h3>
-              <p class="chart-subtitle">
-                Add the final joke/summary visual once the poster narrative is locked
-              </p>
-              <div class="meme-placeholder">
-                <div class="meme-frame">
-                  <span class="meme-sticker">Meme goes here</span>
+            <article class="panel insight-card chart-span-side">
+              <div class="panel-header">
+                <div>
+                  <p class="card-kicker">Tree-Spec Extension</p>
+                  <h2>Where tree-spec matters</h2>
                 </div>
               </div>
-              <p class="takeaway">
-                <strong>Placeholder:</strong> Keep space for a closing visual
-                that reinforces the suffix-vs-draft-model punchline.
+              <p class="insight-lead">
+                Tree-spec is not the strongest short-regime baseline, but it has
+                much higher upside once generation is long enough to amortize
+                verification overhead.
+              </p>
+              <ul class="conclusion-list compact">
+                <li>At <code>limit 10</code>, suffix usually wins or ties in practical throughput.</li>
+                <li>At <code>limit 50</code>, tree-spec breaks out on SWE-bench (155.5 tok/s, 71.5% draft acceptance) where draft acceptance and long outputs amortize verifier overhead.</li>
+                <li>On the other limit-50 workloads, tree-spec settles into a low-acceptance regime (12.7%–18.7%) and clusters near 60–67 tok/s.</li>
+                <li>The method is best viewed as a higher-ceiling extension, not a drop-in replacement for short outputs.</li>
+              </ul>
+            </article>
+
+            <article class="panel summary-card chart-span-full">
+              <div class="panel-header">
+                <div>
+                  <p class="card-kicker">Poster Summary</p>
+                  <h2>What We Learned</h2>
+                </div>
+              </div>
+              <ul class="conclusion-list">
+                <li>Suffix [local] is the main result: faster decoding without a draft model, winning 4 of 6 workloads at limit 10.</li>
+                <li>Local-only matching is the best suffix configuration — global adds cost without proportional benefit.</li>
+                <li>Acceptance rate is a misleading metric: draft-spec loses to vanilla on all six workloads despite 28–40% acceptance.</li>
+                <li>Tree-spec [local] edges suffix on SWE-bench (1.30× vs 1.21×) and shows higher upside at longer generation budgets.</li>
+              </ul>
+              <p class="summary-closing">
+                The central systems lesson is that speculative decoding succeeds
+                only when proposal quality and verification cost are co-designed.
               </p>
             </article>
           </div>
