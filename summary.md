@@ -975,3 +975,130 @@ This section records the current `tree-spec [local]` results after enabling the 
 - **Spider** remains the weakest workload for this path, but even there the incremental-enabled run reaches **89.0 tok/s** and **44.8%** draft accuracy, materially stronger than the earlier low-acceptance tree-spec runs.
 - **TerminalBench**, **WMT14**, and **SWE-bench** all now sit in a strong high-acceptance regime, around **74.9% to 80.4%** draft-token acceptance and roughly **7 accepted tokens per step**.
 - Compared with the earlier `tree-spec [local+global]` sweeps, the new `local_only + incremental-cache` setup is both more stable and substantially more accurate, reinforcing `local_only` as the correct baseline for further tree-spec work.
+
+---
+
+## Final Data: All Methods Local-Only Limit-10 Sweep
+
+This section records the fresh `limit 10` local runs for all five methods across the six benchmark families: `vanilla`, `draft-spec`, `prompt-lookup`, `suffix_speculative [local]`, and `tree-spec [local]`.
+
+- **Date:** `2026-04-29`
+- **Model:** `Qwen/Qwen3-8B`
+- **GPU:** `L40S`
+- **Prompts per workload:** `10`
+- **Thinking mode:** `disabled`
+
+### WMT14
+
+- **Dataset:** `wmt14`
+
+| Method | Tokens | Tok/s | Latency (s) | Peak Mem (MB) | Draft Acc | Wall Time (s) |
+|---|---:|---:|---:|---:|---:|---:|
+| vanilla | 241 | 33.8 | 7.12 | 15,654 | - | 48.7 |
+| draft-spec (`Qwen3-0.6B`) | 240 | 17.6 | 13.66 | 16,863 | 28.7% | 75.8 |
+| prompt-lookup | 240 | 35.4 | 6.77 | 15,660 | - | 64.1 |
+| suffix_speculative [local] | 240 | 40.1 | 5.98 | 15,667 | 8.8% | 35.5 |
+| tree-spec [local] | 238 | 32.4 | 7.35 | 15,698 | 10.2% | 38.1 |
+
+| Method | Steps | Prop/Step | Acc/Step | AccFrac | E2E Tok/s |
+|---|---:|---:|---:|---:|---:|
+| draft-spec (`Qwen3-0.6B`) | 53 | 12.3 | 3.5 | 77.9% | 3.2 |
+| suffix_speculative [local] | 58 | 5.7 | 0.5 | 12.1% | 6.8 |
+| tree-spec [local] | 56 | 5.8 | 0.6 | 13.9% | 6.3 |
+
+### WildChat Translate
+
+- **Dataset:** `allenai/WildChat`
+
+| Method | Tokens | Tok/s | Latency (s) | Peak Mem (MB) | Draft Acc | Wall Time (s) |
+|---|---:|---:|---:|---:|---:|---:|
+| vanilla | 327 | 34.8 | 9.41 | 15,662 | - | 455.0 |
+| draft-spec (`Qwen3-0.6B`) | 295 | 19.9 | 14.80 | 16,856 | 31.4% | 494.3 |
+| prompt-lookup | 433 | 39.8 | 10.89 | 15,690 | - | 462.4 |
+| suffix_speculative [local] | 494 | 40.8 | 12.12 | 15,706 | 9.6% | 486.3 |
+| tree-spec [local] | 465 | 40.2 | 11.57 | 15,720 | 7.0% | 468.2 |
+
+| Method | Steps | Prop/Step | Acc/Step | AccFrac | E2E Tok/s |
+|---|---:|---:|---:|---:|---:|
+| draft-spec (`Qwen3-0.6B`) | 94 | 6.8 | 2.1 | 68.1% | 0.6 |
+| suffix_speculative [local] | 170 | 7.6 | 0.7 | 25.3% | 1.0 |
+| tree-spec [local] | 137 | 7.2 | 0.5 | 14.8% | 1.0 |
+
+### WildChat Code
+
+- **Dataset:** `allenai/WildChat`
+
+| Method | Tokens | Tok/s | Latency (s) | Peak Mem (MB) | Draft Acc | Wall Time (s) |
+|---|---:|---:|---:|---:|---:|---:|
+| vanilla | 5,838 | 26.0 | 224.76 | 15,783 | - | 731.6 |
+| draft-spec (`Qwen3-0.6B`) | 6,092 | 22.3 | 272.85 | 17,078 | 34.6% | 739.4 |
+| prompt-lookup | 5,972 | 43.9 | 136.10 | 15,806 | - | 589.4 |
+| suffix_speculative [local] | 6,141 | 45.3 | 135.67 | 15,818 | 9.3% | 604.4 |
+| tree-spec [local] | 5,101 | 44.6 | 114.40 | 15,954 | 10.1% | 557.9 |
+
+| Method | Steps | Prop/Step | Acc/Step | AccFrac | E2E Tok/s |
+|---|---:|---:|---:|---:|---:|
+| draft-spec (`Qwen3-0.6B`) | 1,654 | 7.7 | 2.7 | 72.8% | 8.2 |
+| suffix_speculative [local] | 2,321 | 7.7 | 0.7 | 26.9% | 10.2 |
+| tree-spec [local] | 1,828 | 7.6 | 0.8 | 27.6% | 9.1 |
+
+### SWE-bench
+
+- **Dataset:** `princeton-nlp/SWE-bench`
+
+| Method | Tokens | Tok/s | Latency (s) | Peak Mem (MB) | Draft Acc | Wall Time (s) |
+|---|---:|---:|---:|---:|---:|---:|
+| vanilla | 7,024 | 37.5 | 187.15 | 16,199 | - | 219.3 |
+| draft-spec (`Qwen3-0.6B`) | 6,962 | 23.8 | 292.97 | 17,607 | 36.7% | 405.6 |
+| prompt-lookup | 7,440 | 45.2 | 164.60 | 16,199 | - | 203.2 |
+| suffix_speculative [local] | 6,869 | 45.5 | 151.03 | 16,199 | 9.4% | 175.4 |
+| tree-spec [local] | 6,827 | 48.8 | 139.87 | 17,751 | 10.2% | 175.8 |
+
+| Method | Steps | Prop/Step | Acc/Step | AccFrac | E2E Tok/s |
+|---|---:|---:|---:|---:|---:|
+| draft-spec (`Qwen3-0.6B`) | 2,054 | 6.5 | 2.4 | 70.5% | 17.2 |
+| suffix_speculative [local] | 2,906 | 7.8 | 0.7 | 31.0% | 39.2 |
+| tree-spec [local] | 2,772 | 8.0 | 0.8 | 33.0% | 38.8 |
+
+### Spider
+
+- **Dataset:** `lamini/spider_text_to_sql`
+
+| Method | Tokens | Tok/s | Latency (s) | Peak Mem (MB) | Draft Acc | Wall Time (s) |
+|---|---:|---:|---:|---:|---:|---:|
+| vanilla | 1,245 | 41.0 | 30.38 | 15,774 | - | 66.1 |
+| draft-spec (`Qwen3-0.6B`) | 1,208 | 25.4 | 47.47 | 16,997 | 40.1% | 81.8 |
+| prompt-lookup | 1,245 | 41.9 | 29.71 | 15,775 | - | 74.2 |
+| suffix_speculative [local] | 1,262 | 41.2 | 30.67 | 15,775 | 7.5% | 64.5 |
+| tree-spec [local] | 1,409 | 40.0 | 35.24 | 15,913 | 8.4% | 74.9 |
+
+| Method | Steps | Prop/Step | Acc/Step | AccFrac | E2E Tok/s |
+|---|---:|---:|---:|---:|---:|
+| draft-spec (`Qwen3-0.6B`) | 210 | 11.8 | 4.8 | 82.6% | 14.8 |
+| suffix_speculative [local] | 467 | 7.6 | 0.6 | 21.2% | 19.6 |
+| tree-spec [local] | 501 | 7.9 | 0.7 | 23.6% | 18.8 |
+
+### TerminalBench
+
+- **Dataset:** `ia03/terminal-bench`
+
+| Method | Tokens | Tok/s | Latency (s) | Peak Mem (MB) | Draft Acc | Wall Time (s) |
+|---|---:|---:|---:|---:|---:|---:|
+| vanilla | 7,990 | 37.8 | 211.31 | 15,841 | - | 257.4 |
+| draft-spec (`Qwen3-0.6B`) | 8,237 | 27.4 | 300.24 | 17,185 | 37.3% | 333.4 |
+| prompt-lookup | 7,892 | 43.6 | 180.88 | 15,872 | - | 229.5 |
+| suffix_speculative [local] | 8,539 | 49.9 | 171.01 | 15,911 | 8.8% | 203.2 |
+| tree-spec [local] | 7,597 | 43.6 | 174.10 | 16,175 | 9.5% | 215.4 |
+
+| Method | Steps | Prop/Step | Acc/Step | AccFrac | E2E Tok/s |
+|---|---:|---:|---:|---:|---:|
+| draft-spec (`Qwen3-0.6B`) | 1,927 | 8.8 | 3.3 | 76.6% | 24.7 |
+| suffix_speculative [local] | 3,776 | 7.6 | 0.7 | 29.4% | 42.0 |
+| tree-spec [local] | 3,140 | 7.7 | 0.7 | 30.0% | 35.3 |
+
+### Summary
+
+- On this `limit 10` local-only sweep, `suffix_speculative [local]` was the fastest speculative method on **WMT14**, **WildChat code**, and **TerminalBench**.
+- `tree-spec [local]` was slightly faster on **SWE-bench**, while **Spider** remained essentially tied among `vanilla`, `prompt-lookup`, `suffix`, and `tree-spec`.
+- Across all six workloads, both local speculative methods stayed in a low-acceptance regime, typically around **7.0% to 10.2%** draft-token acceptance.
+- `draft-spec` remained consistently slower than `vanilla` on every workload in this sweep despite higher acceptance fractions, indicating that the smaller-draft setup still does not pay off end-to-end here.
