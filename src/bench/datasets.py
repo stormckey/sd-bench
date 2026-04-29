@@ -441,13 +441,21 @@ def _translation_prompt_record(
     if max_source_chars is not None and len(source_text) > max_source_chars:
         return None
 
-    prompt = (
-        f"Translate the following text from {source_label} to {target_label}. "
-        "Return only the translation.\n\n"
-        f"{source_label}:\n{source_text}\n\n{target_label}:"
-    )
     prompt_id = record.get("id") or f"translation-{row_index}"
-    return {"id": str(prompt_id), "prompt": prompt}
+    messages = [
+        {
+            "role": "system",
+            "content": (
+                f"You are a translation assistant. Translate {source_label} text into "
+                f"{target_label}. Return only the translation."
+            ),
+        },
+        {
+            "role": "user",
+            "content": f"{source_label}:\n{source_text}",
+        },
+    ]
+    return {"id": str(prompt_id), "messages": messages}
 
 
 def _wildchat_messages_for_generation(
