@@ -28,15 +28,15 @@
           <div class="hero-badges" aria-label="Top results">
             <section class="badge-card accent-blue">
               <p class="badge-value">1.74x</p>
-              <p class="badge-label">WildChat code suffix [local] speedup at limit 10</p>
+              <p class="badge-label">WildChat code suffix [local] speedup</p>
             </section>
             <section class="badge-card accent-green">
               <p class="badge-value">1.19x</p>
-              <p class="badge-label">WMT14 suffix [local] speedup at limit 10</p>
+              <p class="badge-label">WMT14 suffix [local] speedup</p>
             </section>
             <section class="badge-card accent-orange">
               <p class="badge-value">1.30x</p>
-              <p class="badge-label">SWE-bench tree-spec [local] speedup at limit 10</p>
+              <p class="badge-label">SWE-bench tree-spec [local] speedup</p>
             </section>
           </div>
         </header>
@@ -64,7 +64,7 @@
 
           <article class="context-card">
             <p class="card-kicker">Completed Contribution</p>
-            <h2>We added suffix decoding and benchmarked it against strong baselines</h2>
+            <h2>Add suffix decoding and benchmarked it against strong baselines</h2>
             <p>
               Our finished system extends <code>generate()</code> with a
               suffix-based proposer, keeps a unified verification interface, and
@@ -93,7 +93,7 @@
               />
             </figure>
 
-            <section class="architecture-caption-grid">
+            <!-- <section class="architecture-caption-grid">
               <article class="caption-card">
                 <p class="callout-title">What the figure clarifies</p>
                 <p>
@@ -121,7 +121,7 @@
                   more regime-sensitive than the core suffix path.
                 </p>
               </article>
-            </section>
+            </section> -->
           </section>
 
           <aside class="panel inset-panel">
@@ -132,13 +132,13 @@
               </div>
             </div>
 
-            <ul class="config-list">
+            <!-- <ul class="config-list">
               <li>Blue panel: baseline autoregressive decoding, one token per target pass.</li>
               <li>Purple panel: speculative decoding with a separate small draft model.</li>
               <li>Orange panel: prompt lookup from repeated n-grams already in context.</li>
               <li>Green panel: suffix speculation from repeated substrings, with no extra model.</li>
               <li>Tree-spec extends the same proposal-and-verification idea, but its larger payoff only appears when verifier overhead is amortized.</li>
-            </ul>
+            </ul> -->
 
             <div class="inset-callout">
               <p class="callout-title">What changed in <code>transformers</code></p>
@@ -181,10 +181,10 @@
             </article>
 
             <article class="panel chart-card hero-chart chart-span-side compact-chart">
-              <div class="chart-meta">
+              <!-- <div class="chart-meta">
                 <span class="chart-status">Final Figure</span>
                 <span class="chart-source"><code>figures/speculative_speedup.png</code></span>
-              </div>
+              </div> -->
               <h3>Suffix [Local] Delivers Consistent Short-Regime Speedups</h3>
               <p class="chart-subtitle">
                 All methods, local-only, limit 10 · Workloads: WMT14, WildChat translate/code, SWE-bench, Spider, TerminalBench
@@ -195,12 +195,12 @@
                   alt="Bar chart showing speedup over vanilla decoding for draft-spec, prompt-lookup, suffix local, and tree-spec local across six workloads."
                 />
               </figure>
-              <p class="takeaway">
+              <!-- <p class="takeaway">
                 <strong>Takeaway:</strong> Suffix [local] wins on 4 of 6
                 workloads; tree-spec takes SWE-bench (1.30×); Spider is a
                 statistical tie. Draft-spec is slower than vanilla everywhere
                 despite its higher acceptance rate.
-              </p>
+              </p> -->
             </article>
 
             <article class="panel insight-card">
@@ -222,12 +222,12 @@
             </article>
 
             <article class="panel chart-card chart-span-side compact-chart">
-              <div class="chart-meta">
+              <!-- <div class="chart-meta">
                 <span class="chart-status">Final Figure</span>
                 <span class="chart-source">
                   <code>figures/suffix_ablation_normalized_to_local.png</code>
                 </span>
-              </div>
+              </div> -->
               <h3>Local Matching Is the Right Suffix Default</h3>
               <p class="chart-subtitle">
                 Compare <code>local</code>, <code>local+global</code>, and
@@ -239,19 +239,19 @@
                   alt="Chart comparing suffix throughput for local, local plus global, and global-only source modes."
                 />
               </figure>
-              <p class="takeaway">
+              <!-- <p class="takeaway">
                 <strong>Takeaway:</strong> Local matching is the right default —
                 it captures most of suffix’s gain on WMT14 and WildChat code,
                 while global matching adds cost without enough additional
                 useful proposals on most workloads.
-              </p>
+              </p> -->
             </article>
 
             <article class="panel chart-card compact-chart">
-              <div class="chart-meta">
+              <!-- <div class="chart-meta">
                 <span class="chart-status">Final Figure</span>
                 <span class="chart-source"><code>figures/proposal_vs_accept_per_step.png</code></span>
-              </div>
+              </div> -->
               <h3>Acceptance Rate Alone Does Not Predict Speed</h3>
               <p class="chart-subtitle">
                 Accepted and proposed tokens per step · local-only, limit 10
@@ -262,12 +262,12 @@
                   alt="Side-by-side bar charts comparing accepted tokens per step and proposed tokens per step for draft-spec, suffix local, and tree-spec local."
                 />
               </figure>
-              <p class="takeaway">
+              <!-- <p class="takeaway">
                 <strong>Takeaway:</strong> Draft-spec proposes 6–12 tokens/step
                 and accepts 2–5, yet loses to vanilla on every workload.
                 Suffix proposes 6–8 and accepts only ~0.6–0.7, yet wins most
                 workloads — verifier cost, not acceptance count, is the binding constraint.
-              </p>
+              </p> -->
             </article>
 
             <article class="panel insight-card chart-span-side">
@@ -290,7 +290,7 @@
               </ul>
             </article>
 
-            <article class="panel summary-card chart-span-full">
+            <!-- <article class="panel summary-card chart-span-full">
               <div class="panel-header">
                 <div>
                   <p class="card-kicker">Poster Summary</p>
@@ -307,7 +307,7 @@
                 The central systems lesson is that speculative decoding succeeds
                 only when proposal quality and verification cost are co-designed.
               </p>
-            </article>
+            </article> -->
           </div>
         </section>
       </article>

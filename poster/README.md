@@ -4,7 +4,7 @@ This directory contains a standalone HTML/CSS poster scaffold for the project.
 
 ## Files
 
-- `index.html`: main 2:3 portrait poster layout
+- `index.html`: main 1:1.5 portrait poster layout
 - `styles.css`: poster styling, print sizing, and placeholder chart visuals
 - `script.js`: `debug` and `export` mode toggle
 
@@ -26,7 +26,7 @@ Open `index.html` in a browser.
 
 ## Print / export
 
-The on-screen preview scales responsively, and print mode targets a `24 x 36 in` poster page.
+The on-screen preview scales responsively, and print mode targets a `24 x 36 in` (`1:1.5`) poster page.
 
 Recommended browser print settings:
 
