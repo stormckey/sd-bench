@@ -127,8 +127,8 @@
           <aside class="panel inset-panel">
             <div class="panel-header">
               <div>
-                <p class="card-kicker">Reading Guide</p>
-                <h2>How this chart supports the poster story</h2>
+                <p class="card-kicker">Suffix / Tree Intuition</p>
+                <h2>How our proposals and verifier differ from prior methods</h2>
               </div>
             </div>
 
@@ -141,20 +141,20 @@
             </ul> -->
 
             <div class="inset-callout">
-              <p class="callout-title">What changed in <code>transformers</code></p>
+              <p class="callout-title">Suffix Proposals from Repeated Context</p>
               <p>
-                We implemented a suffix candidate generator at the same
-                assisted-generation boundary already used by draft-spec and
-                prompt lookup, enabling direct apples-to-apples comparisons.
+                Instead of using a separate draft model, suffix decoding looks
+                for repeated suffix patterns in the accepted context and turns
+                those matched continuations into speculative token proposals.
               </p>
             </div>
 
             <div class="inset-callout">
-              <p class="callout-title">Why this belongs in the report too</p>
+              <p class="callout-title">Tree Verification Beyond One Path</p>
               <p>
-                The unifying systems story is simple: all methods share the same
-                verifier, but different proposal mechanisms create very
-                different throughput-overhead tradeoffs.
+                The tree version generalizes a single linear suffix match into
+                multiple candidate branches, so one verifier pass can test a
+                broader continuation structure before falling back to decoding.
               </p>
             </div>
           </aside>
