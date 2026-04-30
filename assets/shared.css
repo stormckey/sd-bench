@@ -368,6 +368,11 @@ body {
   color: var(--muted);
 }
 
+.footer-summary {
+  font-size: 13px;
+  line-height: 1.4;
+}
+
 /* ── Print / PDF export ── */
 @media print {
   @page {

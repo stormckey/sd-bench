@@ -176,21 +176,7 @@
             </div>
 
             <footer class="panel-footer">
-              <div class="footer-line">
-                <svg class="icon icon-clock" viewBox="0 0 24 24" aria-hidden="true">
-                  <circle cx="12" cy="12" r="9"></circle>
-                  <path d="M12 7v5l3 2"></path>
-                </svg>
-                <p><strong>Pros:</strong> Simple, stable, no extra components</p>
-              </div>
-              <div class="footer-line">
-                <svg class="icon icon-gauge" viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M4 16a8 8 0 1 1 16 0"></path>
-                  <path d="M12 16l4-6"></path>
-                </svg>
-                <p><strong>Cons:</strong> Slow (1 token per forward pass)</p>
-              </div>
-              <p class="footer-best"><strong>Best for:</strong> General use, low repetition</p>
+              <p class="footer-best footer-summary"><strong>Summary:</strong> The simplest baseline: reliable and general, but limited by one target-model pass per token.</p>
             </footer>
           </article>
 
@@ -357,21 +343,7 @@
             </div>
 
             <footer class="panel-footer">
-              <div class="footer-line">
-                <svg class="icon icon-clock" viewBox="0 0 24 24" aria-hidden="true">
-                  <circle cx="12" cy="12" r="9"></circle>
-                  <path d="M12 7v5l3 2"></path>
-                </svg>
-                <p><strong>Pros:</strong> Higher throughput than autoregressive</p>
-              </div>
-              <div class="footer-line">
-                <svg class="icon icon-gauge" viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M4 16a8 8 0 1 1 16 0"></path>
-                  <path d="M12 16l4-6"></path>
-                </svg>
-                <p><strong>Cons:</strong> Needs auxiliary model, verification overhead, rejections waste compute</p>
-              </div>
-              <p class="footer-best"><strong>Best for:</strong> General workloads with moderate repetition</p>
+              <p class="footer-best footer-summary"><strong>Summary:</strong> Speeds up decoding by proposing multiple tokens with a small draft model, at the cost of extra model and system overhead.</p>
             </footer>
           </article>
 
@@ -509,21 +481,7 @@
             </div>
 
             <footer class="panel-footer">
-              <div class="footer-line">
-                <svg class="icon icon-clock" viewBox="0 0 24 24" aria-hidden="true">
-                  <circle cx="12" cy="12" r="9"></circle>
-                  <path d="M12 7v5l3 2"></path>
-                </svg>
-                <p><strong>Pros:</strong> No auxiliary model, leverages prompt repetition</p>
-              </div>
-              <div class="footer-line">
-                <svg class="icon icon-gauge" viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M4 16a8 8 0 1 1 16 0"></path>
-                  <path d="M12 16l4-6"></path>
-                </svg>
-                <p><strong>Cons:</strong> Lookup may be sparse, still needs verification</p>
-              </div>
-              <p class="footer-best"><strong>Best for:</strong> Prompts with repeated n-gram patterns</p>
+              <p class="footer-best footer-summary"><strong>Summary:</strong> Reuses exact repeated spans from the context without an extra model, but only works well when local repetition is strong.</p>
             </footer>
           </article>
 
@@ -713,116 +671,9 @@
             </div>
 
             <footer class="panel-footer panel-footer-green">
-              <div class="footer-line">
-                <svg class="icon icon-clock" viewBox="0 0 24 24" aria-hidden="true">
-                  <circle cx="12" cy="12" r="9"></circle>
-                  <path d="M12 7v5l3 2"></path>
-                </svg>
-                <p><strong>Pros:</strong> No auxiliary model, reuses context repetition, cache-friendly. Strong on repetitive workloads</p>
-              </div>
-              <div class="footer-line">
-                <svg class="icon icon-gauge" viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="M4 16a8 8 0 1 1 16 0"></path>
-                  <path d="M12 16l4-6"></path>
-                </svg>
-                <p><strong>Cons:</strong> Verification overhead, effectiveness depends on repetitions</p>
-              </div>
-              <p class="footer-best"><strong>Best for:</strong> Repetitive / templated content, code, docs, logs, SQL</p>
+              <p class="footer-best footer-summary"><strong>Summary:</strong> Unlike draft-model speculation, it needs no extra model, and unlike prompt lookup, it proposes from broader repeated suffix structure rather than only exact local matches.</p>
             </footer>
           </article>
-
-        </section><!-- /panels-grid -->
-
-        <!-- ── Legend ── -->
-        <section class="legend-panel">
-          <h2>Legend</h2>
-          <div class="legend-grid">
-            <div class="legend-item">
-              <span class="legend-swatch token-prompt"></span>
-              <div>
-                <h3>Prompt / Context</h3>
-                <p>(Already given)</p>
-              </div>
-            </div>
-            <div class="legend-item">
-              <span class="legend-swatch token-candidate"></span>
-              <div>
-                <h3>Candidate Tokens</h3>
-                <p>(From proposal)</p>
-              </div>
-            </div>
-            <div class="legend-item">
-              <span class="legend-swatch token-accepted"></span>
-              <div>
-                <h3>Accepted Tokens</h3>
-                <p>(Kept by target model)</p>
-              </div>
-            </div>
-            <div class="legend-item">
-              <span class="legend-swatch token-rejected"></span>
-              <div>
-                <h3>Rejected Tokens</h3>
-                <p>(Discarded)</p>
-              </div>
-            </div>
-            <div class="legend-item">
-              <svg class="icon icon-cache" viewBox="0 0 24 24" aria-hidden="true">
-                <ellipse cx="12" cy="5" rx="8" ry="3"></ellipse>
-                <path d="M4 5v13c0 1.7 3.6 3 8 3s8-1.3 8-3V5"></path>
-                <path d="M4 11c0 1.7 3.6 3 8 3s8-1.3 8-3"></path>
-              </svg>
-              <div>
-                <h3>Cache / Memory</h3>
-                <p>(KV cache, index, tree)</p>
-              </div>
-            </div>
-            <div class="legend-item">
-              <svg class="icon icon-llm" viewBox="0 0 32 32" aria-hidden="true">
-                <circle cx="8" cy="8" r="2.3"></circle>
-                <circle cx="22" cy="8" r="2.3"></circle>
-                <circle cx="15" cy="18" r="2.3"></circle>
-                <circle cx="4" cy="18" r="2.3"></circle>
-                <circle cx="26" cy="18" r="2.3"></circle>
-                <circle cx="8" cy="28" r="2.3"></circle>
-                <circle cx="22" cy="28" r="2.3"></circle>
-                <path d="M8 8h14M8 8l-4 10m18-10l4 10M4 18h22M4 18l4 10m18-10l-4 10M8 28h14M8 8l7 10m7-10l-7 10m0 0l-7 10m7-10l7 10"></path>
-              </svg>
-              <div>
-                <h3>Target LLM</h3>
-                <p>(Large Model)</p>
-              </div>
-            </div>
-            <div class="legend-item">
-              <svg class="icon icon-draft" viewBox="0 0 32 32" aria-hidden="true">
-                <circle cx="10" cy="10" r="2.2"></circle>
-                <circle cx="22" cy="10" r="2.2"></circle>
-                <circle cx="16" cy="19" r="2.2"></circle>
-                <circle cx="5" cy="19" r="2.2"></circle>
-                <circle cx="27" cy="19" r="2.2"></circle>
-                <circle cx="10" cy="28" r="2.2"></circle>
-                <circle cx="22" cy="28" r="2.2"></circle>
-                <path d="M10 10h12M10 10l6 9m6-9l-6 9M5 19h22M5 19l5 9m17-9l-5 9M10 28h12"></path>
-              </svg>
-              <div>
-                <h3>Draft Model</h3>
-                <p>(Small Model, method ②)</p>
-              </div>
-            </div>
-            <div class="legend-item legend-lines">
-              <div class="line-set">
-                <span class="legend-line"></span>
-                <span>Data Flow</span>
-              </div>
-              <div class="line-set">
-                <span class="legend-line line-dashed"></span>
-                <span>Lookup / Retrieval</span>
-              </div>
-              <div class="line-set">
-                <span class="legend-line line-dotted"></span>
-                <span>Resume / Continue</span>
-              </div>
-            </div>
-          </div>
         </section>
 
       </section><!-- /artboard -->
