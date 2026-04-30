@@ -32,6 +32,20 @@ def _count_generated_tokens(
     return len(continuation)
 
 
+def _decode_generated_text(
+    sequence: Any,
+    prompt_length: int,
+    total_new_tokens: int,
+    tokenizer: Any,
+) -> str:
+    continuation_ids = sequence[prompt_length : prompt_length + total_new_tokens]
+    return tokenizer.decode(
+        continuation_ids,
+        skip_special_tokens=True,
+        clean_up_tokenization_spaces=True,
+    )
+
+
 def _build_generation_kwargs(
     config: ExperimentConfig,
     tokenizer: Any,
@@ -129,12 +143,22 @@ def run_generation_batches(
         sequences = outputs.sequences if hasattr(outputs, "sequences") else outputs
 
         total_new_tokens = 0
+        generated_texts: list[str] = []
         for row_index in range(len(batch)):
-            total_new_tokens += _count_generated_tokens(
+            new_tokens = _count_generated_tokens(
                 sequences[row_index],
                 int(input_lengths[row_index]),
                 tokenizer.eos_token_id,
                 tokenizer.pad_token_id,
+            )
+            total_new_tokens += new_tokens
+            generated_texts.append(
+                _decode_generated_text(
+                    sequences[row_index],
+                    int(input_lengths[row_index]),
+                    new_tokens,
+                    tokenizer,
+                )
             )
 
         max_allocated_mb = None
@@ -149,6 +173,8 @@ def run_generation_batches(
             BatchRecord(
                 batch_index=batch_index,
                 prompt_ids=prompt_ids,
+                prompt_texts=texts,
+                generated_texts=generated_texts,
                 batch_size=len(batch),
                 batch_latency_seconds=latency,
                 total_new_tokens=total_new_tokens,

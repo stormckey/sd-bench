@@ -65,10 +65,17 @@ results_volume = modal.Volume.from_name(
     version=2,
 )
 
+runtime_secret_payload: dict[str, str] = {}
 if modal.is_local() and os.environ.get("HF_TOKEN"):
-    hf_secret = modal.Secret.from_dict({"HF_TOKEN": os.environ["HF_TOKEN"]})
-else:
-    hf_secret = modal.Secret.from_dict({})
+    runtime_secret_payload["HF_TOKEN"] = os.environ["HF_TOKEN"]
+if modal.is_local() and os.environ.get("TREE_SPEC_DEBUG"):
+    runtime_secret_payload["TREE_SPEC_DEBUG"] = os.environ["TREE_SPEC_DEBUG"]
+if modal.is_local() and os.environ.get("TREE_SPEC_DEBUG_LIMIT"):
+    runtime_secret_payload["TREE_SPEC_DEBUG_LIMIT"] = os.environ["TREE_SPEC_DEBUG_LIMIT"]
+if modal.is_local() and os.environ.get("TREE_SPEC_DEBUG_ROW0_COMPARE"):
+    runtime_secret_payload["TREE_SPEC_DEBUG_ROW0_COMPARE"] = os.environ["TREE_SPEC_DEBUG_ROW0_COMPARE"]
+
+hf_secret = modal.Secret.from_dict(runtime_secret_payload)
 
 
 def _resolve_prompt_path(prompt_path: str) -> Path:
@@ -138,6 +145,7 @@ class BenchmarkWorker:
             cache_dir=HF_CACHE_DIR,
             token=token,
             dtype=torch_dtype,
+            attn_implementation=config.get_method_option("attn_implementation", None),
             device_map=(
                 {"": "cuda:0"}
                 if config.separate_assistant_gpu and torch.cuda.device_count() >= 2
@@ -199,12 +207,14 @@ class BenchmarkWorker:
             return load_jsonl_prompts(
                 _resolve_prompt_path(config.prompt_path),
                 limit=config.limit,
+                seed=config.seed,
             )
         if config.prompt_source == "wildchat_hf":
             return load_wildchat_hf_prompts(
                 dataset_name=config.dataset_name or "allenai/WildChat",
                 split=config.dataset_split,
                 limit=config.limit,
+                seed=config.seed,
                 language=config.dataset_language,
                 streaming=config.dataset_streaming,
                 max_messages=config.dataset_max_messages,
@@ -218,6 +228,7 @@ class BenchmarkWorker:
                 dataset_name=config.dataset_name or "yahma/alpaca-cleaned",
                 split=config.dataset_split,
                 limit=config.limit,
+                seed=config.seed,
                 streaming=config.dataset_streaming,
                 min_user_chars=config.dataset_min_user_chars,
                 max_user_chars=config.dataset_max_user_chars,
@@ -229,6 +240,7 @@ class BenchmarkWorker:
                 dataset_name=config.dataset_name or "EdinburghNLP/xsum",
                 split=config.dataset_split,
                 limit=config.limit,
+                seed=config.seed,
                 streaming=config.dataset_streaming,
                 min_document_chars=config.dataset_min_user_chars,
                 max_document_chars=config.dataset_max_user_chars,
@@ -241,6 +253,7 @@ class BenchmarkWorker:
                 target_language=config.dataset_target_language or "en",
                 split=config.dataset_split,
                 limit=config.limit,
+                seed=config.seed,
                 streaming=config.dataset_streaming,
                 min_source_chars=config.dataset_min_user_chars,
                 max_source_chars=config.dataset_max_user_chars,
@@ -250,6 +263,7 @@ class BenchmarkWorker:
                 dataset_name=config.dataset_name or "lamini/spider_text_to_sql",
                 split=config.dataset_split,
                 limit=config.limit,
+                seed=config.seed,
                 streaming=config.dataset_streaming,
             )
         if config.prompt_source == "swebench_hf":
@@ -257,6 +271,7 @@ class BenchmarkWorker:
                 dataset_name=config.dataset_name or "princeton-nlp/SWE-bench",
                 split=config.dataset_split,
                 limit=config.limit,
+                seed=config.seed,
                 streaming=config.dataset_streaming,
             )
         if config.prompt_source == "terminalbench_hf":
@@ -264,6 +279,7 @@ class BenchmarkWorker:
                 dataset_name=config.dataset_name or "ia03/terminal-bench",
                 split=config.dataset_split,
                 limit=config.limit,
+                seed=config.seed,
                 streaming=config.dataset_streaming,
             )
         raise ValueError(f"Unsupported prompt_source: {config.prompt_source}")
@@ -286,6 +302,7 @@ def main(
         prompts = load_jsonl_prompts(
             _resolve_prompt_path(config.prompt_path),
             limit=config.limit,
+            seed=config.seed,
         )
     else:
         prompts = None

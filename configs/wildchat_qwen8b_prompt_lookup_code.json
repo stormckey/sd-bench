@@ -12,18 +12,28 @@
   "dataset_max_messages": 2,
   "dataset_min_user_chars": 30,
   "dataset_max_user_chars": 400,
-  "dataset_include_keywords": ["code", "python", "function", "implement"],
-  "dataset_exclude_keywords": ["translate", "story", "poem", "roleplay"],
+  "dataset_include_keywords": [
+    "code",
+    "python",
+    "function",
+    "implement"
+  ],
+  "dataset_exclude_keywords": [
+    "translate",
+    "story",
+    "poem",
+    "roleplay"
+  ],
   "enable_thinking": false,
   "batch_size": 1,
   "max_new_tokens": 1024,
   "prompt_lookup_num_tokens": 5,
   "do_sample": false,
-  "temperature": 0.0,
-  "top_p": 1.0,
+  "temperature": 0,
+  "top_p": 1,
   "torch_dtype": "bfloat16",
   "gpu": "L40S",
   "seed": 1234,
-  "limit": 50,
+  "limit": 10,
   "notes": "Filtered WildChat slice focused on short coding prompts, using prompt lookup decoding."
 }

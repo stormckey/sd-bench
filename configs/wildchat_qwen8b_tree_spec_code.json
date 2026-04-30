@@ -1,6 +1,6 @@
 {
-  "experiment_name": "wildchat-qwen8b-vanilla-code",
-  "method": "autoregressive",
+  "experiment_name": "wildchat-qwen8b-tree-spec-code",
+  "method": "tree_speculative",
   "target_model": "Qwen/Qwen3-8B",
   "draft_model": null,
   "prompt_source": "wildchat_hf",
@@ -27,6 +27,7 @@
   "enable_thinking": false,
   "batch_size": 1,
   "max_new_tokens": 1024,
+  "prompt_lookup_num_tokens": null,
   "do_sample": false,
   "temperature": 0,
   "top_p": 1,
@@ -34,5 +35,12 @@
   "gpu": "L40S",
   "seed": 1234,
   "limit": 10,
-  "notes": "Filtered WildChat slice focused on short coding prompts."
+  "method_options": {
+    "tree_spec_decoding_num_tokens": 10,
+    "tree_spec_decoding_max_depth": 64,
+    "tree_spec_decoding_min_prob": 0.1,
+    "tree_spec_decoding_branch_factor": 2,
+    "tree_spec_decoding_source_mode": "local_only"
+  },
+  "notes": "Filtered WildChat slice focused on short coding prompts, using tree-based suffix speculative decoding."
 }

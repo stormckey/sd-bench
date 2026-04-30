@@ -86,6 +86,24 @@ class ExperimentConfig:
         )
         if prompt_lookup_num_tokens is not None and prompt_lookup_num_tokens < 1:
             raise ValueError("prompt_lookup_num_tokens must be at least 1")
+        tree_spec_decoding_num_tokens = self.get_method_option(
+            "tree_spec_decoding_num_tokens",
+            None,
+        )
+        if tree_spec_decoding_num_tokens is not None and tree_spec_decoding_num_tokens < 1:
+            raise ValueError("tree_spec_decoding_num_tokens must be at least 1")
+        tree_spec_decoding_max_depth = self.get_method_option(
+            "tree_spec_decoding_max_depth",
+            None,
+        )
+        if tree_spec_decoding_max_depth is not None and tree_spec_decoding_max_depth < 1:
+            raise ValueError("tree_spec_decoding_max_depth must be at least 1")
+        tree_spec_decoding_branch_factor = self.get_method_option(
+            "tree_spec_decoding_branch_factor",
+            None,
+        )
+        if tree_spec_decoding_branch_factor is not None and tree_spec_decoding_branch_factor < 1:
+            raise ValueError("tree_spec_decoding_branch_factor must be at least 1")
         if self.torch_dtype not in {"float16", "bfloat16", "float32"}:
             raise ValueError(f"Unsupported torch_dtype: {self.torch_dtype}")
 

@@ -9,6 +9,8 @@ from typing import Any
 class BatchRecord:
     batch_index: int
     prompt_ids: list[str]
+    prompt_texts: list[str]
+    generated_texts: list[str]
     batch_size: int
     batch_latency_seconds: float
     total_new_tokens: int

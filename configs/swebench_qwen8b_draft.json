@@ -11,11 +11,11 @@
   "batch_size": 1,
   "max_new_tokens": 2048,
   "do_sample": false,
-  "temperature": 0.0,
-  "top_p": 1.0,
+  "temperature": 0,
+  "top_p": 1,
   "torch_dtype": "bfloat16",
   "gpu": "L40S",
   "seed": 1234,
-  "limit": 50,
+  "limit": 10,
   "notes": "SWE-bench test split using draft speculative decoding."
 }

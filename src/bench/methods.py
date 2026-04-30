@@ -219,33 +219,25 @@ class PromptLookupMethod(BenchmarkMethod):
         }
 
 
-class SuffixSpeculativeMethod(BenchmarkMethod):
-    def prepare_resources(
-        self,
-        config: ExperimentConfig,
-        *,
-        target_tokenizer: Any,
-        torch_dtype: Any,
-        token: str | None,
-        hf_cache_dir: str,
-        auto_model_cls: Any,
-        auto_tokenizer_cls: Any,
-        cuda_device_count: int,
-    ) -> MethodResources:
+class _BaseSuffixTreeMethod(BenchmarkMethod):
+    option_prefix = ""
+    candidate_generator_class_name = ""
+
+    def _prepare_suffix_cache(self, config: ExperimentConfig) -> MethodResources:
         from transformers.generation.suffix_tree import SuffixDecodingCache
 
-        max_depth = config.get_method_option("suffix_decoding_max_depth", 64)
+        max_depth = config.get_method_option(f"{self.option_prefix}_max_depth", 64)
         source_mode = config.get_method_option(
-            "suffix_decoding_source_mode",
+            f"{self.option_prefix}_source_mode",
             "local_and_global",
         )
         if source_mode not in {"local_and_global", "local_only", "global_only"}:
             raise ValueError(
-                "suffix_decoding_source_mode must be one of: "
+                f"{self.option_prefix}_source_mode must be one of: "
                 "'local_and_global', 'local_only', 'global_only'"
             )
         cache_max_requests = config.get_method_option(
-            "suffix_decoding_cache_max_requests",
+            f"{self.option_prefix}_cache_max_requests",
             -1,
         )
         cache = SuffixDecodingCache(
@@ -255,32 +247,6 @@ class SuffixSpeculativeMethod(BenchmarkMethod):
         )
         return MethodResources(extras={"suffix_decoding_cache": cache})
 
-    def build_generation_kwargs(
-        self,
-        config: ExperimentConfig,
-        *,
-        tokenizer: Any,
-        resources: MethodResources,
-    ) -> dict[str, Any]:
-        suffix_decoding_num_tokens = config.get_method_option(
-            "suffix_decoding_num_tokens", 10,
-        )
-        suffix_decoding_max_depth = config.get_method_option(
-            "suffix_decoding_max_depth", 64,
-        )
-        suffix_decoding_min_prob = config.get_method_option(
-            "suffix_decoding_min_prob", 0.1,
-        )
-        kwargs = {
-            "suffix_decoding_num_tokens": suffix_decoding_num_tokens,
-            "suffix_decoding_max_depth": suffix_decoding_max_depth,
-            "suffix_decoding_min_prob": suffix_decoding_min_prob,
-        }
-        cache = resources.extras.get("suffix_decoding_cache")
-        if cache is not None:
-            kwargs["suffix_decoding_cache"] = cache
-        return kwargs
-
     @contextmanager
     def generation_context(
         self,
@@ -288,10 +254,11 @@ class SuffixSpeculativeMethod(BenchmarkMethod):
         *,
         resources: MethodResources,
     ):
-        from transformers.generation.candidate_generator import SuffixDecodingCandidateGenerator
+        from transformers.generation import candidate_generator as cg
 
+        generator_cls = getattr(cg, self.candidate_generator_class_name)
         stats = SpeculationStats()
-        original_update = SuffixDecodingCandidateGenerator.update_candidate_strategy
+        original_update = generator_cls.update_candidate_strategy
 
         def wrapped_update(self, input_ids: Any, scores: Any, num_matches: int):
             if hasattr(num_matches, "item"):
@@ -299,12 +266,7 @@ class SuffixSpeculativeMethod(BenchmarkMethod):
             else:
                 num_matches = int(num_matches)
 
-            proposed_draft_tokens = 0
-            if scores is not None:
-                try:
-                    proposed_draft_tokens = max(len(scores[0]) - 1, 0)
-                except Exception:
-                    proposed_draft_tokens = 0
+            proposed_draft_tokens = _count_proposed_draft_tokens(self, scores)
 
             if proposed_draft_tokens > 0:
                 stats.proposed_draft_tokens += proposed_draft_tokens
@@ -313,11 +275,11 @@ class SuffixSpeculativeMethod(BenchmarkMethod):
 
             return original_update(self, input_ids, scores, num_matches)
 
-        SuffixDecodingCandidateGenerator.update_candidate_strategy = wrapped_update
+        generator_cls.update_candidate_strategy = wrapped_update
         try:
             yield stats
         finally:
-            SuffixDecodingCandidateGenerator.update_candidate_strategy = original_update
+            generator_cls.update_candidate_strategy = original_update
 
     def build_batch_metrics(self, tracker: Any) -> dict[str, Any]:
         if tracker is None:
@@ -349,6 +311,100 @@ class SuffixSpeculativeMethod(BenchmarkMethod):
         }
 
 
+class SuffixSpeculativeMethod(_BaseSuffixTreeMethod):
+    option_prefix = "suffix_decoding"
+    candidate_generator_class_name = "SuffixDecodingCandidateGenerator"
+
+    def prepare_resources(
+        self,
+        config: ExperimentConfig,
+        *,
+        target_tokenizer: Any,
+        torch_dtype: Any,
+        token: str | None,
+        hf_cache_dir: str,
+        auto_model_cls: Any,
+        auto_tokenizer_cls: Any,
+        cuda_device_count: int,
+    ) -> MethodResources:
+        return self._prepare_suffix_cache(config)
+
+    def build_generation_kwargs(
+        self,
+        config: ExperimentConfig,
+        *,
+        tokenizer: Any,
+        resources: MethodResources,
+    ) -> dict[str, Any]:
+        suffix_decoding_num_tokens = config.get_method_option(
+            "suffix_decoding_num_tokens", 10,
+        )
+        suffix_decoding_max_depth = config.get_method_option(
+            "suffix_decoding_max_depth", 64,
+        )
+        suffix_decoding_min_prob = config.get_method_option(
+            "suffix_decoding_min_prob", 0.1,
+        )
+        kwargs = {
+            "suffix_decoding_num_tokens": suffix_decoding_num_tokens,
+            "suffix_decoding_max_depth": suffix_decoding_max_depth,
+            "suffix_decoding_min_prob": suffix_decoding_min_prob,
+        }
+        cache = resources.extras.get("suffix_decoding_cache")
+        if cache is not None:
+            kwargs["suffix_decoding_cache"] = cache
+        return kwargs
+
+ 
+class TreeSpeculativeMethod(_BaseSuffixTreeMethod):
+    option_prefix = "tree_spec_decoding"
+    candidate_generator_class_name = "TreeSpecDecodingCandidateGenerator"
+
+    def prepare_resources(
+        self,
+        config: ExperimentConfig,
+        *,
+        target_tokenizer: Any,
+        torch_dtype: Any,
+        token: str | None,
+        hf_cache_dir: str,
+        auto_model_cls: Any,
+        auto_tokenizer_cls: Any,
+        cuda_device_count: int,
+    ) -> MethodResources:
+        return self._prepare_suffix_cache(config)
+
+    def build_generation_kwargs(
+        self,
+        config: ExperimentConfig,
+        *,
+        tokenizer: Any,
+        resources: MethodResources,
+    ) -> dict[str, Any]:
+        tree_spec_decoding_num_tokens = config.get_method_option(
+            "tree_spec_decoding_num_tokens", 10,
+        )
+        tree_spec_decoding_max_depth = config.get_method_option(
+            "tree_spec_decoding_max_depth", 64,
+        )
+        tree_spec_decoding_min_prob = config.get_method_option(
+            "tree_spec_decoding_min_prob", 0.1,
+        )
+        tree_spec_decoding_branch_factor = config.get_method_option(
+            "tree_spec_decoding_branch_factor", 2,
+        )
+        kwargs = {
+            "tree_spec_decoding_num_tokens": tree_spec_decoding_num_tokens,
+            "tree_spec_decoding_max_depth": tree_spec_decoding_max_depth,
+            "tree_spec_decoding_min_prob": tree_spec_decoding_min_prob,
+            "tree_spec_decoding_branch_factor": tree_spec_decoding_branch_factor,
+        }
+        cache = resources.extras.get("suffix_decoding_cache")
+        if cache is not None:
+            kwargs["tree_spec_decoding_cache"] = cache
+        return kwargs
+
+
 class UnimplementedMethod(BenchmarkMethod):
     def __init__(self, method_name: str):
         self.method_name = method_name
@@ -368,7 +424,7 @@ METHOD_REGISTRY: dict[str, BenchmarkMethod] = {
     "draft_speculative": DraftSpeculativeMethod(),
     "prompt_lookup": PromptLookupMethod(),
     "suffix_speculative": SuffixSpeculativeMethod(),
-    "tree_speculative": UnimplementedMethod("tree_speculative"),
+    "tree_speculative": TreeSpeculativeMethod(),
 }
 
 
@@ -391,3 +447,19 @@ def _tokenizers_match(main_tokenizer: Any, assistant_tokenizer: Any) -> bool:
     if getattr(main_tokenizer, "pad_token_id", None) != getattr(assistant_tokenizer, "pad_token_id", None):
         return False
     return main_tokenizer.get_vocab() == assistant_tokenizer.get_vocab()
+
+
+def _count_proposed_draft_tokens(generator: Any, scores: Any) -> int:
+    tree_draft = getattr(generator, "tree_draft", None)
+    if tree_draft is not None:
+        try:
+            return len(tree_draft.token_ids)
+        except Exception:
+            return 0
+
+    if scores is not None:
+        try:
+            return max(len(scores[0]) - 1, 0)
+        except Exception:
+            return 0
+    return 0

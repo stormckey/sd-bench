@@ -1,6 +1,6 @@
 {
-  "experiment_name": "terminalbench-qwen8b-suffix",
-  "method": "suffix_speculative",
+  "experiment_name": "terminalbench-qwen8b-tree-spec",
+  "method": "tree_speculative",
   "target_model": "Qwen/Qwen3-8B",
   "draft_model": null,
   "prompt_source": "terminalbench_hf",
@@ -19,10 +19,11 @@
   "seed": 1234,
   "limit": 10,
   "method_options": {
-    "suffix_decoding_num_tokens": 10,
-    "suffix_decoding_max_depth": 64,
-    "suffix_decoding_min_prob": 0.1,
-    "suffix_decoding_source_mode": "local_only"
+    "tree_spec_decoding_num_tokens": 10,
+    "tree_spec_decoding_max_depth": 64,
+    "tree_spec_decoding_min_prob": 0.1,
+    "tree_spec_decoding_branch_factor": 2,
+    "tree_spec_decoding_source_mode": "local_only"
   },
-  "notes": "TerminalBench test split using suffix speculative decoding."
+  "notes": "TerminalBench test split using tree-based suffix speculative decoding."
 }
