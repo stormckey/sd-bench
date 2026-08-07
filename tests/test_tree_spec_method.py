@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import unittest
 from pathlib import Path
-from types import SimpleNamespace
+from types import ModuleType, SimpleNamespace
 from unittest.mock import patch
 import sys
 
@@ -32,6 +32,31 @@ class FakeTreeSpecDecodingCandidateGenerator:
             "num_matches": num_matches,
         }
         return FakeTreeSpecDecodingCandidateGenerator.last_call
+
+
+def fake_transformers_modules():
+    transformers = ModuleType("transformers")
+    generation = ModuleType("transformers.generation")
+    suffix_tree = ModuleType("transformers.generation.suffix_tree")
+    candidate_generator = ModuleType("transformers.generation.candidate_generator")
+
+    suffix_tree.SuffixDecodingCache = FakeSuffixDecodingCache
+    candidate_generator.TreeSpecDecodingCandidateGenerator = (
+        FakeTreeSpecDecodingCandidateGenerator
+    )
+    generation.suffix_tree = suffix_tree
+    generation.candidate_generator = candidate_generator
+    transformers.generation = generation
+
+    return patch.dict(
+        sys.modules,
+        {
+            "transformers": transformers,
+            "transformers.generation": generation,
+            "transformers.generation.suffix_tree": suffix_tree,
+            "transformers.generation.candidate_generator": candidate_generator,
+        },
+    )
 
 
 class TreeSpecMethodTests(unittest.TestCase):
@@ -80,10 +105,7 @@ class TreeSpecMethodTests(unittest.TestCase):
             }
         )
 
-        with patch(
-            "transformers.generation.suffix_tree.SuffixDecodingCache",
-            FakeSuffixDecodingCache,
-        ):
+        with fake_transformers_modules():
             resources = TreeSpeculativeMethod().prepare_resources(
                 config,
                 target_tokenizer=None,
@@ -111,17 +133,18 @@ class TreeSpecMethodTests(unittest.TestCase):
             }
         )
 
-        with self.assertRaisesRegex(ValueError, "tree_spec_decoding_source_mode"):
-            TreeSpeculativeMethod().prepare_resources(
-                config,
-                target_tokenizer=None,
-                torch_dtype=None,
-                token=None,
-                hf_cache_dir="/tmp/hf",
-                auto_model_cls=None,
-                auto_tokenizer_cls=None,
-                cuda_device_count=1,
-            )
+        with fake_transformers_modules():
+            with self.assertRaisesRegex(ValueError, "tree_spec_decoding_source_mode"):
+                TreeSpeculativeMethod().prepare_resources(
+                    config,
+                    target_tokenizer=None,
+                    torch_dtype=None,
+                    token=None,
+                    hf_cache_dir="/tmp/hf",
+                    auto_model_cls=None,
+                    auto_tokenizer_cls=None,
+                    cuda_device_count=1,
+                )
 
     def test_generation_context_counts_tree_draft_tokens(self):
         method = TreeSpeculativeMethod()
@@ -132,10 +155,7 @@ class TreeSpecMethodTests(unittest.TestCase):
             }
         )
 
-        with patch(
-            "transformers.generation.candidate_generator.TreeSpecDecodingCandidateGenerator",
-            FakeTreeSpecDecodingCandidateGenerator,
-        ):
+        with fake_transformers_modules():
             with method.generation_context(config, resources=MethodResources()) as tracker:
                 generator = FakeTreeSpecDecodingCandidateGenerator()
                 generator.tree_draft = SimpleNamespace(token_ids=[11, 12, 13, 14])

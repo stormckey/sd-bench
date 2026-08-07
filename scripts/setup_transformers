@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+REPOSITORY="https://github.com/stormckey/transformers.git"
+DESTINATION="${2:-transformers}"
+PROFILE="${1:-suffix}"
+
+case "$PROFILE" in
+  suffix)
+    BRANCH="suffix-decoding"
+    REVISION="76d60fa5751e4d66423523b9d78680743ff666fd"
+    ;;
+  tree-spec)
+    BRANCH="tree-spec-decoding"
+    REVISION="c66e13b7ee10b7d630c4d5e2319b1f382e00cd2a"
+    ;;
+  *)
+    echo "usage: $0 {suffix|tree-spec} [destination]" >&2
+    exit 2
+    ;;
+esac
+
+if [[ -e "$DESTINATION" ]]; then
+  echo "error: destination already exists: $DESTINATION" >&2
+  echo "remove it explicitly or pass a different destination" >&2
+  exit 1
+fi
+
+git clone \
+  --filter=blob:none \
+  --single-branch \
+  --branch "$BRANCH" \
+  "$REPOSITORY" \
+  "$DESTINATION"
+
+git -C "$DESTINATION" checkout --detach "$REVISION"
+
+ACTUAL_REVISION="$(git -C "$DESTINATION" rev-parse HEAD)"
+if [[ "$ACTUAL_REVISION" != "$REVISION" ]]; then
+  echo "error: expected $REVISION, checked out $ACTUAL_REVISION" >&2
+  exit 1
+fi
+
+echo "prepared $PROFILE Transformers checkout at $DESTINATION"
+echo "revision: $ACTUAL_REVISION"
