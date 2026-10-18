@@ -5,7 +5,7 @@
 A Modal-based benchmark harness for comparing autoregressive decoding, prompt lookup, draft-model speculation, and suffix/tree speculative decoding on realistic language-model workloads.
 
 - **Transformers implementation:** [`stormckey/transformers`](https://github.com/stormckey/transformers/tree/suffix-decoding)
-- **Results:** [course evaluation](#results) and the [H100 follow-up](#follow-up-september-2026-fixed-tree-verification-on-h100); earlier exploratory runs in [`summary.md`](summary.md)
+- **Results:** [H100, September 2026](#results) and the [course evaluation](#course-evaluation-spring-2026-l40s); earlier exploratory runs in [`summary.md`](summary.md)
 - **Project poster:** [`assets/index.pdf`](assets/index.pdf)
 
 ## What It Evaluates
@@ -41,33 +41,8 @@ The helper clones the selected branch and checks out the exact detached revision
 
 ## Results
 
-Final course evaluation (CMU 15-642, Spring 2026): `Qwen/Qwen3-8B` on one NVIDIA L40S via Modal, 10 prompts per
-workload, batch size 1, greedy decoding (`do_sample=false`), local (per-request) caches only. Numbers are throughput relative to autoregressive decoding.
-
-| Workload | Autoregressive (tok/s) | Draft model | Prompt lookup | Suffix (ours) | Tree-spec |
-|---|---:|---:|---:|---:|---:|
-| WMT14 | 33.8 | 0.52× | 1.05× | **1.19×** | 0.96× |
-| WildChat translate | 34.8 | 0.57× | 1.14× | **1.17×** | 1.16× |
-| WildChat code | 26.0 | 0.86× | 1.69× | **1.74×** | 1.72× |
-| SWE-bench | 37.5 | 0.63× | 1.21× | 1.21× | **1.30×** |
-| Spider | 41.0 | 0.62× | **1.02×** | 1.00× | 0.98× |
-| TerminalBench | 37.8 | 0.72× | 1.15× | **1.32×** | 1.15× |
-
-![Speedup over autoregressive decoding](poster/speculative_speedup_final.png)
-
-- Suffix decoding needs no draft model. It was the fastest method on 4 of 6 workloads and within 0.1× of the fastest
-  on the other two, peaking at **1.74×** on WildChat code.
-- The draft-model baseline (`Qwen/Qwen3-0.6B`) was slower than autoregressive decoding on every workload: it accepted
-  more draft tokens per step, but each step also ran the second model.
-- Data and plotting code: [`poster/gen_figures.py`](poster/gen_figures.py). The raw Modal artifacts behind these
-  numbers were not committed, so treat them as reported results, not something CI reproduces.
-- Earlier exploratory runs (50 prompts, different cache settings) reached higher peaks such as 2.14× on WMT14; they
-  are kept in [`summary.md`](summary.md) for reference but are not the headline result.
-
-## Follow-up (September 2026): fixed tree verification on H100
-
-After the course I revisited the team's tree-spec path in
-[`stormckey/transformers@tree-spec-fix`](https://github.com/stormckey/transformers/tree/tree-spec-fix/bench_tree_spec):
+Latest results (September 2026), after the course. I revisited the team's tree-spec path in
+[`stormckey/transformers`](https://github.com/stormckey/transformers/tree/suffix-decoding/bench_tree_spec) (merged into the default branch):
 
 - **Correctness fix.** When the verifier accepted any branch other than the first one in flattened order, it kept the
   KV entries of rejected draft tokens and corrupted later steps. Verification now feeds the flattened tree with a 4D
@@ -90,7 +65,33 @@ records in `results/qwen3-8b-h100-v3.json`.
 | **All** | 1.79× | 2.12× | **2.36×** |
 
 Tree vs. suffix, paired per prompt: 1.11× (95% bootstrap CI 1.08–1.15), reproduced across two runs. These numbers use a
-different GPU, tasks and output length from the course sweep above, so the two tables are not directly comparable.
+different GPU, tasks and output length from the [course sweep](#course-evaluation-spring-2026-l40s) below, so the two
+tables are not directly comparable.
+
+## Course evaluation (Spring 2026, L40S)
+
+Final course evaluation (CMU 15-642, Spring 2026): `Qwen/Qwen3-8B` on one NVIDIA L40S via Modal, 10 prompts per
+workload, batch size 1, greedy decoding (`do_sample=false`), local (per-request) caches only. Numbers are throughput relative to autoregressive decoding.
+
+| Workload | Autoregressive (tok/s) | Draft model | Prompt lookup | Suffix (ours) | Tree-spec |
+|---|---:|---:|---:|---:|---:|
+| WMT14 | 33.8 | 0.52× | 1.05× | **1.19×** | 0.96× |
+| WildChat translate | 34.8 | 0.57× | 1.14× | **1.17×** | 1.16× |
+| WildChat code | 26.0 | 0.86× | 1.69× | **1.74×** | 1.72× |
+| SWE-bench | 37.5 | 0.63× | 1.21× | 1.21× | **1.30×** |
+| Spider | 41.0 | 0.62× | **1.02×** | 1.00× | 0.98× |
+| TerminalBench | 37.8 | 0.72× | 1.15× | **1.32×** | 1.15× |
+
+![Speedup over autoregressive decoding](poster/speculative_speedup_final.png)
+
+- Suffix decoding needs no draft model. It was the fastest method on 4 of 6 workloads and within 0.1× of the fastest
+  on the other two, peaking at **1.74×** on WildChat code.
+- The draft-model baseline (`Qwen/Qwen3-0.6B`) was slower than autoregressive decoding on every workload: it accepted
+  more draft tokens per step, but each step also ran the second model.
+- Data and plotting code: [`poster/gen_figures.py`](poster/gen_figures.py). The raw Modal artifacts behind these
+  numbers were not committed, so treat them as reported results, not something CI reproduces.
+- Earlier exploratory runs (50 prompts, different cache settings) reached higher peaks such as 2.14× on WMT14; they
+  are kept in [`summary.md`](summary.md) for reference but are not the headline result.
 
 ## Quick Start
 
