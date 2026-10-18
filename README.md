@@ -1,9 +1,11 @@
 # LLM Serving Benchmark
 
+[![tests](https://github.com/stormckey/sd-bench/actions/workflows/tests.yml/badge.svg)](https://github.com/stormckey/sd-bench/actions/workflows/tests.yml)
+
 A Modal-based benchmark harness for comparing autoregressive decoding, prompt lookup, draft-model speculation, and suffix/tree speculative decoding on realistic language-model workloads.
 
 - **Transformers implementation:** [`stormckey/transformers`](https://github.com/stormckey/transformers/tree/suffix-decoding)
-- **Detailed historical results:** [`summary.md`](summary.md)
+- **Results:** [below](#results); earlier exploratory runs in [`summary.md`](summary.md)
 - **Project poster:** [`assets/index.pdf`](assets/index.pdf)
 
 ## What It Evaluates
@@ -37,18 +39,30 @@ The benchmark installs the local checkout at `./transformers`, rather than the P
 
 The helper clones the selected branch and checks out the exact detached revision. It refuses to overwrite an existing `./transformers` directory.
 
-## Historical Benchmark Snapshot
+## Results
 
-The strongest directly comparable retained run is the April 16, 2026 default suite on an NVIDIA L40S using `Qwen/Qwen3-8B` and 50 WMT14 French-to-English prompts:
+Final course evaluation (CMU 15-642, Spring 2026): `Qwen/Qwen3-8B` on one NVIDIA L40S via Modal, 10 prompts per
+workload, batch size 1, greedy decoding (`do_sample=false`), local (per-request) caches only. Numbers are throughput relative to autoregressive decoding.
 
-| Method | Throughput | Speedup vs. autoregressive |
-|---|---:|---:|
-| `autoregressive` | 25.7 tok/s | 1.00× |
-| `draft_speculative` | 17.3 tok/s | 0.67× |
-| `prompt_lookup` | 45.0 tok/s | 1.75× |
-| `suffix_speculative` | **55.0 tok/s** | **2.14×** |
+| Workload | Autoregressive (tok/s) | Draft model | Prompt lookup | Suffix (ours) | Tree-spec |
+|---|---:|---:|---:|---:|---:|
+| WMT14 | 33.8 | 0.52× | 1.05× | **1.19×** | 0.96× |
+| WildChat translate | 34.8 | 0.57× | 1.14× | **1.17×** | 1.16× |
+| WildChat code | 26.0 | 0.86× | 1.69× | **1.74×** | 1.72× |
+| SWE-bench | 37.5 | 0.63× | 1.21× | 1.21× | **1.30×** |
+| Spider | 41.0 | 0.62× | **1.02×** | 1.00× | 0.98× |
+| TerminalBench | 37.8 | 0.72× | 1.15× | **1.32×** | 1.15× |
 
-These are historical project results transcribed from [`summary.md`](summary.md), not a fresh rerun. The original raw Modal artifacts were not committed, so this table should not be treated as independently reproduced. The repository retains larger sweeps, cache-mode ablations, acceptance metrics, memory measurements, and workload-specific results in the detailed summary.
+![Speedup over autoregressive decoding](poster/speculative_speedup_final.png)
+
+- Suffix decoding needs no draft model. It was the fastest method on 4 of 6 workloads and within 0.1× of the fastest
+  on the other two, peaking at **1.74×** on WildChat code.
+- The draft-model baseline (`Qwen/Qwen3-0.6B`) was slower than autoregressive decoding on every workload: it accepted
+  more draft tokens per step, but each step also ran the second model.
+- Data and plotting code: [`poster/gen_figures.py`](poster/gen_figures.py). The raw Modal artifacts behind these
+  numbers were not committed, so treat them as reported results, not something CI reproduces.
+- Earlier exploratory runs (50 prompts, different cache settings) reached higher peaks such as 2.14× on WMT14; they
+  are kept in [`summary.md`](summary.md) for reference but are not the headline result.
 
 ## Quick Start
 
