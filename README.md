@@ -5,7 +5,7 @@
 A Modal-based benchmark harness for comparing autoregressive decoding, prompt lookup, draft-model speculation, and suffix/tree speculative decoding on realistic language-model workloads.
 
 - **Transformers implementation:** [`stormckey/transformers`](https://github.com/stormckey/transformers/tree/suffix-decoding)
-- **Results:** [below](#results); earlier exploratory runs in [`summary.md`](summary.md)
+- **Results:** [course evaluation](#results) and the [H100 follow-up](#follow-up-september-2026-fixed-tree-verification-on-h100); earlier exploratory runs in [`summary.md`](summary.md)
 - **Project poster:** [`assets/index.pdf`](assets/index.pdf)
 
 ## What It Evaluates
@@ -63,6 +63,34 @@ workload, batch size 1, greedy decoding (`do_sample=false`), local (per-request)
   numbers were not committed, so treat them as reported results, not something CI reproduces.
 - Earlier exploratory runs (50 prompts, different cache settings) reached higher peaks such as 2.14× on WMT14; they
   are kept in [`summary.md`](summary.md) for reference but are not the headline result.
+
+## Follow-up (September 2026): fixed tree verification on H100
+
+After the course I revisited the team's tree-spec path in
+[`stormckey/transformers@tree-spec-fix`](https://github.com/stormckey/transformers/tree/tree-spec-fix/bench_tree_spec):
+
+- **Correctness fix.** When the verifier accepted any branch other than the first one in flattened order, it kept the
+  KV entries of rejected draft tokens and corrupted later steps. Verification now feeds the flattened tree with a 4D
+  tree mask and depth-based position ids, then moves the accepted path's KV next to the prefix before cropping. In
+  float32 every method now reproduces plain greedy decoding exactly (tests in `tests/generation/test_candidate_generator.py`).
+- **Uncapped drafts.** A Qwen3-8B forward on H100 costs about the same for 1 or 129 query tokens, so the old draft-size
+  cap discarded free verification work. The policy was tuned offline on a separate dev split with a simulator that
+  replays greedy outputs and predicted tokens per forward within about 3%.
+
+Setup: Qwen3-8B, one H100, bf16, batch size 1, greedy, up to 384 new tokens, 30 prompts per task; all methods run back
+to back per prompt in rotated order; geometric-mean speedup over autoregressive decoding, recomputed from the raw
+records in `results/qwen3-8b-h100-v3.json`.
+
+| Task | Prompt lookup | Suffix | Tree (fixed) |
+|---|---:|---:|---:|
+| Code editing (CanItEdit) | 3.90× | 6.64× | **9.04×** |
+| HumanEval | 1.69× | 1.85× | **1.93×** |
+| GSM8K | 1.41× | 1.43× | **1.57×** |
+| Chat (MT-Bench) | 1.11× | **1.15×** | 1.13× |
+| **All** | 1.79× | 2.12× | **2.36×** |
+
+Tree vs. suffix, paired per prompt: 1.11× (95% bootstrap CI 1.08–1.15), reproduced across two runs. These numbers use a
+different GPU, tasks and output length from the course sweep above, so the two tables are not directly comparable.
 
 ## Quick Start
 
